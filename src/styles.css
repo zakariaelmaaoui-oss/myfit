@@ -416,3 +416,40 @@ a { color: var(--green-dark); }
 .spark i { flex: 1; border-radius: 3px; background: #66c59a; min-height: 3px; }
 .drops { display: flex; gap: 4px; font-size: 1.05rem; flex-wrap: wrap; }
 .drops span { opacity: .25; } .drops span.on { opacity: 1; }
+
+/* =====================================================================
+   Theme v4 — white + black accents (overrides lime)
+   ===================================================================== */
+:root {
+  --ink: #171915; --ink-soft: #f1f2ee;
+  --lime: #ffffff; --lime-soft: #f1f2ee; --lime-strong: #171915; --lime-ink: #171915;
+  --green: #171915; --green-dark: #171915; --green-darker: #000000; --sage-soft: #f1f2ee; --sage: #d9dcd4;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --ink: #f2f4ef; --ink-soft: #262a23; --lime: #1b1e19; --lime-soft: #262a23; --lime-strong: #f2f4ef; --lime-ink: #f2f4ef;
+  --green: #f2f4ef; --green-dark: #f2f4ef; --green-darker: #ffffff; --sage-soft: #262a23;
+} }
+:root[data-theme="dark"] {
+  --ink: #f2f4ef; --ink-soft: #262a23; --lime: #1b1e19; --lime-soft: #262a23; --lime-strong: #f2f4ef; --lime-ink: #f2f4ef;
+  --green: #f2f4ef; --green-dark: #f2f4ef; --green-darker: #ffffff; --sage-soft: #262a23;
+}
+.btn.primary { background: var(--ink); color: var(--surface) !important; box-shadow: 0 6px 16px rgba(0, 0, 0, .18); }
+.btn.primary:hover { background: var(--ink); opacity: .9; }
+.chip.on, .seg button.on { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.fab { background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 8px 22px rgba(0, 0, 0, .16); }
+.weekcard { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+:root[data-theme="dark"] .weekcard { background: var(--surface); }
+.weekcard .pill i { background: var(--ink-soft); }
+.ringwrap { background: var(--ink-soft); }
+.cal .day.on { background: var(--ink); color: var(--surface); }
+.cal .day.on b { color: var(--surface); }
+.cal .day .logdot { background: var(--ink); }
+.cal .day.on .logdot { background: var(--surface); }
+.bfill { background: #d9dcd4; }
+.bcol.on .bfill { background: var(--ink); }
+.bar > i { background: var(--ink); }
+.toast { border-inline-start-color: var(--ink); }
+.badge { background: var(--ink-soft); color: var(--ink); }
+.nav a.active .navicon { background: var(--ink-soft); }
+.nav a.active { color: var(--ink); }
+@media (min-width: 960px) { .nav a.active { background: var(--ink-soft); } .fab { background: var(--ink); color: var(--surface); } }

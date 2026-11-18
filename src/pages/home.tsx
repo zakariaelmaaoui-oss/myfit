@@ -44,7 +44,7 @@ export function Home() {
     <Link to="/progress" className="weekcard" aria-label={t('home.weeklyProgress')}>
       <div className="grow"><span className="pill"><i>⚡</i>{t('home.dailyIntake')}</span><h2>{t('home.weeklyProgress')}</h2>
         <p className="tiny" style={{ marginTop: 6, opacity: .8 }}>{t('home.daysLogged', { n: loggedDays })}</p></div>
-      <div className="ringwrap"><Ring value={loggedDays} max={7} size={92} stroke={10} color="#7cc23a"><b style={{ fontSize: '1.4rem', lineHeight: 1 }}>{loggedDays}</b><span className="tiny">{t('home.days')}</span></Ring></div>
+      <div className="ringwrap"><Ring value={loggedDays} max={7} size={92} stroke={10} color="var(--ink)"><b style={{ fontSize: '1.4rem', lineHeight: 1 }}>{loggedDays}</b><span className="tiny">{t('home.days')}</span></Ring></div>
     </Link>
 
     <div className="grid2">
