@@ -360,3 +360,11 @@ S('settings.modeLocal', 'Device mode (local storage)', 'Mode appareil (stockage 
 S('settings.disclaimer', 'Health notice', 'Avertissement santé', 'تنبيه صحي');
 S('settings.disclaimerText', 'MyFit provides general information and estimates. It does not diagnose, treat or prescribe, and does not replace a doctor or registered dietitian. Do not use it to follow very low-calorie diets or to compensate for eating.', 'MyFit fournit des informations générales et des estimations. Il ne pose pas de diagnostic, ne traite pas, ne prescrit pas et ne remplace pas un médecin ou un(e) diététicien(ne). Ne l’utilisez pas pour suivre des régimes très hypocaloriques ou pour compenser.', 'يقدم MyFit معلومات عامة وتقديرات. لا يشخص ولا يعالج ولا يصف دواء، ولا يغني عن الطبيب أو أخصائي التغذية. لا تستخدميه لاتباع حميات منخفضة جدا أو للتعويض عن الأكل.');
 S('privacy.withdraw', 'Withdrawing consent removes the optional health information from your profile and turns off sleep and cycle tracking (existing logs can be deleted in those sections).', 'Retirer le consentement efface les informations de santé facultatives du profil et désactive le suivi du sommeil et du cycle (les entrées existantes peuvent être supprimées dans ces sections).', 'سحب الموافقة يزيل المعلومات الصحية الاختيارية من ملفك ويعطل متابعة النوم والدورة (يمكن حذف السجلات الموجودة من تلك الأقسام).');
+S('home.search', 'Search foods, recipes…', 'Rechercher aliments, recettes…', 'ابحثي عن أطعمة ووصفات…', 'قلبي على ماكلة ولا وصفة…');
+S('home.todayGoal', 'Today’s goal', 'Objectif du jour', 'هدف اليوم', 'الهدف ديال اليوم');
+S('home.overview', 'Nutrition overview', 'Aperçu nutritionnel', 'نظرة على التغذية');
+S('home.seeAll', 'See all', 'Tout voir', 'عرض الكل', 'شوف كلشي');
+S('home.topFruits', 'Top fruits', 'Fruits du moment', 'فواكه مختارة', 'فواكه مزيانين');
+S('home.energySplit', 'Today’s energy split', 'Répartition de l’énergie', 'توزيع طاقة اليوم');
+S('auth.heroTitle', 'Eat better, live healthy', 'Mangez mieux, vivez sainement', 'كُلي أفضل، عيشي بصحة', 'كولي مزيان، عيشي بصحة');
+S('auth.heroText', 'Fresh food, simple habits and kind support every day.', 'Des aliments frais, des habitudes simples et un soutien bienveillant chaque jour.', 'طعام طازج، عادات بسيطة ودعم لطيف كل يوم.', 'ماكلة طرية، عادات ساهلة ودعم كل نهار.');

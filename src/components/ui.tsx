@@ -147,3 +147,15 @@ export function Confirm({ open, text, onYes, onNo }: { open: boolean; text: stri
 }
 
 export function errMsg(e: any): string { return e?.message || String(e); }
+
+/** Multi-segment donut (e.g. energy from carbs / protein / fat). Values are drawn proportionally. */
+export function Donut({ parts, size = 150, stroke = 18, children }: { parts: { value: number; color: string }[]; size?: number; stroke?: number; children?: ReactNode }) {
+  const r = (size - stroke) / 2; const c = 2 * Math.PI * r; const total = parts.reduce((a, p) => a + Math.max(0, p.value), 0);
+  let offset = 0; const gap = total > 0 && parts.filter(p => p.value > 0).length > 1 ? 4 : 0;
+  return <div className="ring" style={{ width: size, height: size }}>
+    <svg width={size} height={size}><circle cx={size / 2} cy={size / 2} r={r} stroke="rgba(47,93,70,.10)" strokeWidth={stroke} fill="none" />
+      {total > 0 && parts.map((p, i) => { const len = (Math.max(0, p.value) / total) * c; const el = len > 0 ? <circle key={i} cx={size / 2} cy={size / 2} r={r} stroke={p.color} strokeWidth={stroke} fill="none"
+        strokeLinecap="round" strokeDasharray={`${Math.max(0, len - gap)} ${c}`} strokeDashoffset={-offset} style={{ transition: 'stroke-dasharray .5s' }} /> : null; offset += len; return el; })}</svg>
+    <div className="rl">{children}</div>
+  </div>;
+}

@@ -11,10 +11,15 @@ function LangPicker() {
   const { lang } = useI18n();
   return <div className="chips" style={{ justifyContent: 'center' }}>{LANGS.map(l => <button key={l.id} type="button" className={`chip ${lang === l.id ? 'on' : ''}`} onClick={() => setLang(l.id)}>{l.label}</button>)}</div>;
 }
+const DECO: [string, React.CSSProperties][] = [['🍊', { top: '6%', left: '6%' }], ['🍓', { top: '12%', right: '8%' }], ['🥝', { bottom: '14%', left: '5%' }],
+  ['🍍', { bottom: '6%', right: '10%', fontSize: '4rem' }], ['🫐', { top: '45%', left: '2%', fontSize: '2.4rem' }], ['🥭', { top: '40%', right: '3%' }], ['🍇', { bottom: '35%', right: '18%', fontSize: '2.2rem' }]];
+function FruitDeco() { return <>{DECO.map(([e, st], i) => <span key={i} className="fruitdeco" style={st} aria-hidden="true">{e}</span>)}</>; }
 function Shell({ children }: { children: React.ReactNode }) {
   const { t } = useI18n(); const { mode } = useApp();
-  return <div className="auth"><div className="card stack" style={{ gap: 16 }}>
-    <div className="center stack tight"><span className="logo" style={{ justifyContent: 'center' }}><Logo s={36} /> MyFit</span><p className="muted small">{t('app.tagline')}</p></div>
+  return <div className="auth"><FruitDeco /><div className="card stack" style={{ gap: 16, position: 'relative' }}>
+    <div className="center stack tight"><div className="fruithero" aria-hidden="true">🍊🍓🥝🍍🍇🥭</div>
+      <span className="logo" style={{ justifyContent: 'center' }}><Logo s={36} /> MyFit</span>
+      <p className="authtitle">{t('auth.heroTitle')}</p><p className="muted small">{t('auth.heroText')}</p></div>
     <LangPicker />
     {mode === 'local' && <div className="banner">{t('auth.localMode')}</div>}
     {children}
@@ -117,7 +122,7 @@ export function Welcome() {
       nav('/');
     } catch (x) { setErr(errMsg(x)); } finally { setBusy(false); }
   };
-  return <div className="auth"><div className="card stack" style={{ gap: 16, maxWidth: 520 }}>
+  return <div className="auth"><FruitDeco /><div className="card stack" style={{ gap: 16, maxWidth: 520, position: 'relative' }}>
     <div className="row between"><span className="logo"><Logo /> MyFit</span><span className="small muted">{step + 1}/{sections.length}</span></div>
     <div className="steps">{sections.map((_, i) => <i key={i} className={i <= step ? 'on' : ''} />)}</div>
     <h2>{t('onb.' + sections[step])}</h2>

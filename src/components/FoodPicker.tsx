@@ -4,6 +4,7 @@ import { useI18n } from '../lib/i18n';
 import { useApp } from '../lib/app';
 import { isoDate, scaleNutrients } from '../lib/nutrition';
 import { Icon, Modal, NutrientTable, errMsg, useFmt } from './ui';
+import { foodEmoji } from '../lib/emoji';
 
 export const MEALS = ['breakfast', 'lunch', 'dinner', 'snack', 'drink'] as const;
 export type MealSlot = typeof MEALS[number];
@@ -25,7 +26,8 @@ export function FoodSearch({ onPick, category: initialCat = 'all', autoFocus }: 
     </div>
     <div className="list" data-testid="food-results">
       {results.slice(0, limit).map(fd => <button key={fd.id} className="li" style={{ background: 'none', border: 0, borderBottom: '1px solid var(--line)', textAlign: 'start', cursor: 'pointer', width: '100%' }} onClick={() => onPick(fd)}>
-        <div className="grow"><div className="ellipsis" style={{ fontWeight: 600 }}>{foodName(fd, lang)}</div>
+        <span className="thumb sm" aria-hidden="true">{foodEmoji(fd)}</span>
+        <div className="grow" style={{ minWidth: 0 }}><div className="ellipsis" style={{ fontWeight: 600 }}>{foodName(fd, lang)}</div>
           <div className="tiny muted">{t('food.per100')} · {f(fd.per100g.protein)} {t('n.proteinShort')} · {f(fd.per100g.sugar)} {t('n.sugarShort')}{!fd.verified && <> · <span className="badge beige">{t('food.unverified')}</span></>}</div></div>
         <b className="num small">{f(fd.per100g.kcal, 'kcal')}</b>
       </button>)}

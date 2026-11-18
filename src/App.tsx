@@ -1,4 +1,5 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { AddFoodFlow } from './components/FoodPicker';
 import { BrowserRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './lib/app';
 import { useI18n } from './lib/i18n';
@@ -16,10 +17,12 @@ import { ActivityHistory, NutritionCharts, ProgressHub, Report, Weight } from '.
 import { EditProfile, Goals, Language, Notifications, Privacy, ProfileHub, Settings, applyTheme } from './pages/profile';
 
 function Nav() {
-  const { t } = useI18n();
-  const items = [['/', 'home', 'home'], ['/food', 'food', 'food'], ['/wellness', 'heart', 'wellness'], ['/progress', 'chart', 'progress'], ['/profile', 'user', 'profile']];
-  return <nav className="nav" aria-label="Main"><span className="brand-side"><Logo s={30} /> MyFit</span><ul>{items.map(([to, i, k]) => <li key={to}>
-    <NavLink to={to} end={to === '/'} className={({ isActive }) => (isActive ? 'active' : '')}><span className="navicon"><Icon n={i} s={22} /></span>{t('nav.' + k)}</NavLink></li>)}</ul></nav>;
+  const { t } = useI18n(); const [adding, setAdding] = useState(false);
+  const items = [['/', 'home', 'home'], ['/food', 'food', 'food'], null, ['/wellness', 'heart', 'wellness'], ['/progress', 'chart', 'progress'], ['/profile', 'user', 'profile']] as const;
+  return <><nav className="nav" aria-label="Main"><span className="brand-side"><Logo s={30} /> MyFit</span><ul>{items.map((it, k) => it === null
+    ? <li key="fab" className="fabcell"><button className="fab" aria-label={t('home.addFood')} onClick={() => setAdding(true)} data-testid="fab"><Icon n="plus" s={26} sw={2.4} /><span className="fablabel">{t('home.addFood')}</span></button></li>
+    : <li key={k}><NavLink to={it[0]} end={it[0] === '/'} className={({ isActive }) => (isActive ? 'active' : '')}><span className="navicon"><Icon n={it[1]} s={22} /></span>{t('nav.' + it[2])}</NavLink></li>)}</ul></nav>
+    <AddFoodFlow open={adding} onClose={() => setAdding(false)} /></>;
 }
 
 function Splash({ text }: { text?: string }) {

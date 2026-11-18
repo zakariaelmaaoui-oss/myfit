@@ -5,6 +5,7 @@ import { useI18n } from '../lib/i18n';
 import { RECIPES, getRecipe, l3, recipeName, recipeSteps, type Meal } from '../data/recipes';
 import { matchFridge, priceMap, recipeInfo, scaledIngredients, type RecipeInfo } from '../lib/recipes';
 import { foodName, getFood, type Food } from '../lib/foods';
+import { recipeEmoji } from '../lib/emoji';
 import { addDays, isoDate, recipeNutrition, scaleNutrients } from '../lib/nutrition';
 import { FoodSearch, MEALS, defaultMeal, type MealSlot } from '../components/FoodPicker';
 import { Empty, Icon, Modal, NutrientTable, Page, errMsg, useFmt } from '../components/ui';
@@ -15,7 +16,7 @@ type Filter = typeof FILTERS[number];
 export function RecipeCard({ info, extra }: { info: RecipeInfo; extra?: React.ReactNode }) {
   const { t, lang, nf } = useI18n(); const fmt = useFmt(); const r = info.recipe;
   return <Link to={`/food/recipes/${r.id}`} className="card" style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-    <div className="row between" style={{ alignItems: 'flex-start' }}><div className="grow"><b>{recipeName(r, lang)}</b>
+    <div className="row between" style={{ alignItems: 'flex-start' }}><span className="thumb" aria-hidden="true">{recipeEmoji(r)}</span><div className="grow" style={{ minWidth: 0 }}><b>{recipeName(r, lang)}</b>
       <div className="tiny muted">{l3(r.serving, lang)} · {info.totalMin} {t('unit.min')}{info.costPerServing !== null ? ` · ${nf(info.costPerServing, 2)} MAD` : ''}</div></div>
       <b className="num small">{fmt(info.perServing.totals.kcal, 'kcal', info.perServing.incomplete.kcal)}</b></div>
     <div className="row wrap" style={{ marginTop: 8, gap: 6 }}>
