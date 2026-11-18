@@ -1,0 +1,545 @@
+// Stored recipe database. Nothing here is generated at runtime: every recipe is written by hand,
+// and nutrition is CALCULATED from the listed raw ingredient weights using the USDA reference data
+// (see lib/nutrition.recipeNutrition). Water used for cooking contributes 0 kcal and is not listed.
+// Oil used for cooking is counted in full (assumes it is eaten with the dish).
+
+export type L3 = { en: string; fr: string; ar: string };
+export type Meal = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+export interface RecipeIngredient { foodId: string; grams: number; consumed?: boolean }
+export interface Recipe {
+  id: string; name: L3; moroccan: boolean; meals: Meal[]; kind: 'main' | 'soup' | 'salad' | 'bread' | 'breakfast' | 'snack' | 'dessert' | 'drink';
+  servings: number; serving: L3; prepMin: number; cookMin: number; budget?: boolean;
+  ingredients: RecipeIngredient[]; steps: { en: string[]; fr: string[]; ar: string[] };
+  variantOf?: string; variant?: L3; note?: L3;
+}
+
+const ing = (s: string): RecipeIngredient[] => s.trim().split(/\s+/).map(p => {
+  const [foodId, g, flag] = p.split(':');
+  return { foodId, grams: Number(g), ...(flag === 'x' ? { consumed: false } : {}) };
+});
+const S = (en: string, fr: string, ar: string): L3 => ({ en, fr, ar });
+
+export const RECIPES: Recipe[] = [
+  {
+    id: 'harira', moroccan: true, meals: ['dinner', 'lunch'], kind: 'soup', servings: 6, serving: S('1 bowl (≈350 ml)', '1 bol (≈350 ml)', 'زلافة واحدة (≈350 مل)'),
+    prepMin: 20, cookMin: 75, budget: true,
+    name: S('Harira (with beef)', 'Harira (au bœuf)', 'الحريرة (باللحم)'),
+    ingredients: ing('beef_chuck_lean:200 lentils_raw:100 chickpeas_raw:100 tomato:600 tomato_paste:30 onion:150 celery:60 parsley:20 coriander:20 flour_white:50 vermicelli_dry:50 olive_oil:20 ginger_ground:3 turmeric:3 black_pepper:2 cinnamon:1 salt:8 lemon_juice:30'),
+    steps: {
+      en: ['Soak the chickpeas overnight, then drain.', 'Cut the meat into small cubes. In a large pot, cook meat, chopped onion, celery, herbs, spices and oil for 5 minutes.', 'Add blended tomatoes, tomato paste, chickpeas, lentils and 2.5 L of water. Simmer 60 minutes.', 'Whisk the flour with 300 ml cold water and pour slowly while stirring to thicken (tadouira).', 'Add vermicelli and cook 8–10 minutes. Serve with lemon juice.'],
+      fr: ['Faire tremper les pois chiches la veille, puis égoutter.', 'Couper la viande en petits dés. Dans une grande marmite, faire revenir viande, oignon, céleri, herbes, épices et huile 5 minutes.', 'Ajouter les tomates mixées, le concentré, les pois chiches, les lentilles et 2,5 L d’eau. Laisser mijoter 60 minutes.', 'Délayer la farine dans 300 ml d’eau froide et verser doucement en remuant pour épaissir (tadouira).', 'Ajouter les vermicelles et cuire 8 à 10 minutes. Servir avec du jus de citron.'],
+      ar: ['انقعي الحمص من الليلة السابقة ثم صفيه.', 'قطعي اللحم مكعبات صغيرة. في قدر كبير، شوحي اللحم مع البصل والكرافس والقزبور والمعدنوس والتوابل والزيت لمدة 5 دقائق.', 'أضيفي الطماطم المطحونة ومعجون الطماطم والحمص والعدس و2.5 لتر من الماء، واتركيها تطهى 60 دقيقة.', 'اخلطي الدقيق مع 300 مل ماء بارد (التدويرة) وصبيها تدريجيا مع التحريك.', 'أضيفي الشعرية واتركيها 8 إلى 10 دقائق. تقدم مع الحامض.'],
+    },
+  },
+  {
+    id: 'harira_veg', variantOf: 'harira', variant: S('Vegetarian', 'Végétarienne', 'نباتية'), moroccan: true, meals: ['dinner', 'lunch'], kind: 'soup', servings: 6,
+    serving: S('1 bowl (≈350 ml)', '1 bol (≈350 ml)', 'زلافة واحدة (≈350 مل)'), prepMin: 20, cookMin: 60, budget: true,
+    name: S('Harira (vegetarian)', 'Harira (végétarienne)', 'الحريرة (بدون لحم)'),
+    ingredients: ing('lentils_raw:130 chickpeas_raw:130 tomato:600 tomato_paste:30 onion:150 celery:60 parsley:20 coriander:20 flour_white:50 vermicelli_dry:50 olive_oil:25 ginger_ground:3 turmeric:3 black_pepper:2 cinnamon:1 salt:8 lemon_juice:30'),
+    steps: {
+      en: ['Soak the chickpeas overnight.', 'Sauté onion, celery, herbs and spices in oil for 5 minutes.', 'Add tomatoes, tomato paste, chickpeas, lentils and 2.5 L water; simmer 50 minutes.', 'Thicken with the flour mixed in cold water, add vermicelli and cook 8–10 minutes.'],
+      fr: ['Faire tremper les pois chiches la veille.', 'Faire revenir oignon, céleri, herbes et épices dans l’huile 5 minutes.', 'Ajouter tomates, concentré, pois chiches, lentilles et 2,5 L d’eau ; mijoter 50 minutes.', 'Épaissir avec la farine délayée dans l’eau froide, ajouter les vermicelles et cuire 8 à 10 minutes.'],
+      ar: ['انقعي الحمص من الليلة السابقة.', 'شوحي البصل والكرافس والأعشاب والتوابل في الزيت 5 دقائق.', 'أضيفي الطماطم والمعجون والحمص والعدس و2.5 لتر ماء، واتركيها 50 دقيقة.', 'ثخني بالتدويرة ثم أضيفي الشعرية لمدة 8 إلى 10 دقائق.'],
+    },
+  },
+  {
+    id: 'bissara', moroccan: true, meals: ['breakfast', 'dinner', 'lunch'], kind: 'soup', servings: 4, serving: S('1 bowl (≈300 ml)', '1 bol (≈300 ml)', 'زلافة (≈300 مل)'),
+    prepMin: 10, cookMin: 50, budget: true,
+    name: S('Bissara (fava bean soup)', 'Bissara (soupe de fèves)', 'البيصارة'),
+    ingredients: ing('fava_raw:250 garlic:15 olive_oil:30 cumin:4 paprika:3 salt:6 lemon_juice:15'),
+    steps: {
+      en: ['Soak peeled dried fava beans for a few hours, then rinse.', 'Cook with garlic and 1.5 L of water for about 45 minutes until very soft.', 'Blend until smooth, add salt and adjust thickness with hot water.', 'Serve with olive oil, cumin, paprika and a little lemon juice.'],
+      fr: ['Faire tremper les fèves sèches décortiquées quelques heures, puis rincer.', 'Cuire avec l’ail et 1,5 L d’eau environ 45 minutes jusqu’à ce qu’elles soient très tendres.', 'Mixer finement, saler et ajuster la consistance avec de l’eau chaude.', 'Servir avec huile d’olive, cumin, paprika et un peu de citron.'],
+      ar: ['انقعي الفول اليابس المقشر بضع ساعات ثم اغسليه.', 'اطهيه مع الثوم و1.5 لتر ماء حوالي 45 دقيقة حتى يصبح طريا جدا.', 'اطحنيه جيدا وأضيفي الملح وعدلي الكثافة بالماء الساخن.', 'تقدم مع زيت الزيتون والكمون والتحميرة وقليل من الحامض.'],
+    },
+  },
+  {
+    id: 'bissara_peas', variantOf: 'bissara', variant: S('Split peas', 'Pois cassés', 'بالجلبانة المقشرة'), moroccan: true, meals: ['breakfast', 'dinner'], kind: 'soup', servings: 4,
+    serving: S('1 bowl (≈300 ml)', '1 bol (≈300 ml)', 'زلافة (≈300 مل)'), prepMin: 10, cookMin: 45, budget: true,
+    name: S('Bissara with split peas', 'Bissara aux pois cassés', 'بيصارة بالجلبانة المقشرة'),
+    note: S('Uses the USDA value for cooked split peas (700 g cooked ≈ 280 g dry).', 'Valeur USDA des pois cassés cuits (700 g cuits ≈ 280 g secs).', 'محسوبة بقيمة الجلبانة المطبوخة (700 غ مطبوخة ≈ 280 غ جافة).'),
+    ingredients: ing('split_peas_cooked:700 garlic:15 olive_oil:30 cumin:4 paprika:3 salt:6'),
+    steps: {
+      en: ['Cook the split peas with garlic in water until soft.', 'Blend, season and thin with hot water.', 'Serve with olive oil, cumin and paprika.'],
+      fr: ['Cuire les pois cassés avec l’ail dans l’eau jusqu’à tendreté.', 'Mixer, assaisonner et allonger avec de l’eau chaude.', 'Servir avec huile d’olive, cumin et paprika.'],
+      ar: ['اطهي الجلبانة المقشرة مع الثوم في الماء حتى تنضج.', 'اطحنيها وتبليها وخففيها بالماء الساخن.', 'تقدم مع زيت الزيتون والكمون والتحميرة.'],
+    },
+  },
+  {
+    id: 'zaalouk', moroccan: true, meals: ['lunch', 'dinner', 'snack'], kind: 'salad', servings: 4, serving: S('1 small plate (≈200 g)', '1 petite assiette (≈200 g)', 'صحن صغير (≈200 غ)'),
+    prepMin: 15, cookMin: 30, budget: true,
+    name: S('Zaalouk (eggplant & tomato)', 'Zaalouk (aubergine et tomate)', 'الزعلوك'),
+    ingredients: ing('eggplant:600 tomato:400 garlic:15 olive_oil:30 cumin:3 paprika:4 parsley:10 coriander:10 salt:5'),
+    steps: {
+      en: ['Peel the eggplant in stripes and cut into cubes; steam or boil 15 minutes.', 'Peel and grate the tomatoes.', 'Cook tomatoes, garlic, oil and spices 10 minutes, add the eggplant and mash.', 'Cook until thick, add herbs. Serve warm or cold.'],
+      fr: ['Éplucher l’aubergine en bandes et la couper en dés ; cuire à la vapeur ou à l’eau 15 minutes.', 'Peler et râper les tomates.', 'Cuire tomates, ail, huile et épices 10 minutes, ajouter l’aubergine et écraser.', 'Laisser réduire, ajouter les herbes. Servir tiède ou froid.'],
+      ar: ['قشري الباذنجان على شكل خطوط وقطعيه مكعبات، ثم اطهيه بالبخار أو في الماء 15 دقيقة.', 'قشري الطماطم واحككيها.', 'اطهي الطماطم مع الثوم والزيت والتوابل 10 دقائق، ثم أضيفي الباذنجان واهرسيه.', 'اتركيه حتى يتعقد وأضيفي الأعشاب. يقدم دافئا أو باردا.'],
+    },
+  },
+  {
+    id: 'taktouka', moroccan: true, meals: ['lunch', 'dinner', 'snack'], kind: 'salad', servings: 4, serving: S('1 small plate (≈200 g)', '1 petite assiette (≈200 g)', 'صحن صغير (≈200 غ)'),
+    prepMin: 20, cookMin: 25, budget: true,
+    name: S('Taktouka (pepper & tomato)', 'Taktouka (poivrons et tomates)', 'التكتوكة'),
+    ingredients: ing('pepper_green:400 pepper_red:200 tomato:500 garlic:10 olive_oil:30 cumin:3 paprika:4 coriander:10 salt:5'),
+    steps: {
+      en: ['Grill the peppers until the skin blackens, cover 10 minutes, then peel and dice.', 'Cook grated tomatoes with garlic, oil and spices for 10 minutes.', 'Add peppers and cook 10 more minutes until thick. Finish with coriander.'],
+      fr: ['Griller les poivrons jusqu’à ce que la peau noircisse, couvrir 10 minutes, peler et couper en dés.', 'Cuire les tomates râpées avec l’ail, l’huile et les épices 10 minutes.', 'Ajouter les poivrons et cuire encore 10 minutes. Finir avec la coriandre.'],
+      ar: ['اشوي الفلفل حتى يسود جلده، غطيه 10 دقائق ثم قشريه وقطعيه.', 'اطهي الطماطم المحكوكة مع الثوم والزيت والتوابل 10 دقائق.', 'أضيفي الفلفل واتركيه 10 دقائق أخرى حتى يتعقد، ثم القزبور.'],
+    },
+  },
+  {
+    id: 'couscous_beef', moroccan: true, meals: ['lunch'], kind: 'main', servings: 6, serving: S('1 plate (≈450 g)', '1 assiette (≈450 g)', 'صحن (≈450 غ)'),
+    prepMin: 30, cookMin: 90,
+    name: S('Couscous with seven vegetables (beef)', 'Couscous aux sept légumes (bœuf)', 'كسكس بسبع خضاري (باللحم)'),
+    ingredients: ing('couscous_dry:500 beef_chuck_lean:500 onion:200 tomato:200 carrot:300 turnip:250 zucchini:300 pumpkin:300 cabbage:200 chickpeas_raw:80 olive_oil:30 butter:20 ginger_ground:4 turmeric:3 black_pepper:2 salt:10 coriander:15 parsley:15'),
+    steps: {
+      en: ['Soak chickpeas overnight.', 'In the base of a couscoussier, brown meat with onion, tomato, oil and spices; add 2 L water and chickpeas; cook 45 minutes.', 'Add carrots, turnips and cabbage; 15 minutes later add zucchini and pumpkin.', 'Steam the couscous over the broth three times, working in a little water and the butter between steamings.', 'Arrange couscous, meat and vegetables on a plate; serve broth on the side.'],
+      fr: ['Faire tremper les pois chiches la veille.', 'Dans le bas du couscoussier, faire revenir la viande avec oignon, tomate, huile et épices ; ajouter 2 L d’eau et les pois chiches ; cuire 45 minutes.', 'Ajouter carottes, navets et chou ; 15 minutes plus tard, courgettes et potiron.', 'Cuire la semoule à la vapeur trois fois, en l’aérant avec un peu d’eau et le beurre entre chaque passage.', 'Dresser semoule, viande et légumes ; servir le bouillon à part.'],
+      ar: ['انقعي الحمص من الليلة السابقة.', 'في أسفل الكسكاس، شوحي اللحم مع البصل والطماطم والزيت والتوابل، ثم أضيفي 2 لتر ماء والحمص واتركيه 45 دقيقة.', 'أضيفي الجزر واللفت والكرنب، وبعد 15 دقيقة الكوسة والكرعة.', 'فوري الكسكس فوق المرق ثلاث مرات مع تفتيله بقليل من الماء والزبدة بين كل تفويرة.', 'رتبي الكسكس واللحم والخضر في الطبق، وقدمي المرق جانبا.'],
+    },
+  },
+  {
+    id: 'couscous_chicken', variantOf: 'couscous_beef', variant: S('Chicken', 'Poulet', 'بالدجاج'), moroccan: true, meals: ['lunch'], kind: 'main', servings: 6,
+    serving: S('1 plate (≈450 g)', '1 assiette (≈450 g)', 'صحن (≈450 غ)'), prepMin: 30, cookMin: 70,
+    name: S('Couscous with seven vegetables (chicken)', 'Couscous aux sept légumes (poulet)', 'كسكس بسبع خضاري (بالدجاج)'),
+    ingredients: ing('couscous_dry:500 chicken_thigh_raw:600 onion:200 tomato:200 carrot:300 turnip:250 zucchini:300 pumpkin:300 cabbage:200 chickpeas_raw:80 olive_oil:30 butter:20 ginger_ground:4 turmeric:3 black_pepper:2 salt:10 coriander:15 parsley:15'),
+    steps: {
+      en: ['Same method as the beef version; chicken needs only 25 minutes before adding the vegetables.'],
+      fr: ['Même méthode que la version au bœuf ; le poulet ne demande que 25 minutes avant d’ajouter les légumes.'],
+      ar: ['نفس طريقة الكسكس باللحم، لكن الدجاج يحتاج 25 دقيقة فقط قبل إضافة الخضر.'],
+    },
+  },
+  {
+    id: 'couscous_veg', variantOf: 'couscous_beef', variant: S('Vegetarian', 'Végétarien', 'نباتي'), moroccan: true, meals: ['lunch'], kind: 'main', servings: 6,
+    serving: S('1 plate (≈450 g)', '1 assiette (≈450 g)', 'صحن (≈450 غ)'), prepMin: 30, cookMin: 60, budget: true,
+    name: S('Vegetable couscous (vegetarian)', 'Couscous aux légumes (végétarien)', 'كسكس بالخضر (نباتي)'),
+    ingredients: ing('couscous_dry:500 chickpeas_raw:150 onion:200 tomato:200 carrot:300 turnip:250 zucchini:300 pumpkin:300 cabbage:200 olive_oil:35 butter:20 ginger_ground:4 turmeric:3 black_pepper:2 salt:10 coriander:15 parsley:15'),
+    steps: {
+      en: ['Cook onion, tomato, spices, oil and soaked chickpeas in 2 L water for 30 minutes.', 'Add the vegetables in order of cooking time (carrots, turnips, cabbage, then zucchini and pumpkin).', 'Steam the couscous three times over the broth and serve with the vegetables.'],
+      fr: ['Cuire oignon, tomate, épices, huile et pois chiches trempés dans 2 L d’eau pendant 30 minutes.', 'Ajouter les légumes selon leur temps de cuisson (carottes, navets, chou, puis courgettes et potiron).', 'Cuire la semoule trois fois à la vapeur et servir avec les légumes.'],
+      ar: ['اطهي البصل والطماطم والتوابل والزيت والحمص المنقوع في 2 لتر ماء لمدة 30 دقيقة.', 'أضيفي الخضر حسب مدة طهيها (الجزر، اللفت، الكرنب، ثم الكوسة والكرعة).', 'فوري الكسكس ثلاث مرات وقدميه مع الخضر.'],
+    },
+  },
+  {
+    id: 'tagine_chicken_olives', moroccan: true, meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('1 portion (≈300 g)', '1 portion (≈300 g)', 'حصة (≈300 غ)'),
+    prepMin: 15, cookMin: 60,
+    name: S('Chicken tagine with lemon & olives', 'Tajine de poulet au citron et olives', 'طاجين الدجاج بالحامض والزيتون'),
+    note: S('Preserved lemon is calculated with the USDA value for fresh lemon (no preserved-lemon reference exists).', 'Le citron confit est calculé avec la valeur USDA du citron frais (pas de référence pour le citron confit).', 'الحامض المصير محسوب بقيمة الحامض الطري لعدم وجود مرجع له.'),
+    ingredients: ing('chicken_thigh_raw:700 onion:250 garlic:15 olives_green:100 lemon:60 olive_oil:30 ginger_ground:3 turmeric:2 black_pepper:1 coriander:15 parsley:15 salt:5'),
+    steps: {
+      en: ['Marinate chicken with grated onion, garlic, spices, herbs and oil for 30 minutes (or longer).', 'Cook covered on low heat with 200 ml water for 45 minutes, turning once.', 'Add olives and lemon pieces and cook 10 more minutes until the sauce thickens.'],
+      fr: ['Mariner le poulet avec oignon râpé, ail, épices, herbes et huile 30 minutes (ou plus).', 'Cuire à couvert à feu doux avec 200 ml d’eau 45 minutes, en retournant une fois.', 'Ajouter olives et citron, cuire encore 10 minutes jusqu’à ce que la sauce réduise.'],
+      ar: ['تبلي الدجاج بالبصل المحكوك والثوم والتوابل والأعشاب والزيت 30 دقيقة أو أكثر.', 'اطهيه مغطى على نار هادئة مع 200 مل ماء لمدة 45 دقيقة مع قلبه مرة.', 'أضيفي الزيتون والحامض واتركيه 10 دقائق حتى تتعقد المرقة.'],
+    },
+  },
+  {
+    id: 'tagine_beef_prunes', moroccan: true, meals: ['lunch', 'dinner'], kind: 'main', servings: 6, serving: S('1 portion (≈250 g)', '1 portion (≈250 g)', 'حصة (≈250 غ)'),
+    prepMin: 15, cookMin: 120,
+    name: S('Beef tagine with prunes', 'Tajine de bœuf aux pruneaux', 'طاجين اللحم بالبرقوق'),
+    ingredients: ing('beef_chuck_lean:800 onion:300 prunes:250 honey:30 cinnamon:4 ginger_ground:3 black_pepper:1 butter:20 olive_oil:20 sesame:10 almonds:40 salt:6'),
+    steps: {
+      en: ['Cook meat with onion, spices, oil, butter and 500 ml water, covered, about 1 h 30 until tender.', 'Simmer prunes separately with a little sauce, the honey and cinnamon for 10 minutes.', 'Serve meat topped with prunes, toasted almonds and sesame.'],
+      fr: ['Cuire la viande avec oignon, épices, huile, beurre et 500 ml d’eau, à couvert, environ 1 h 30.', 'Faire mijoter les pruneaux avec un peu de sauce, le miel et la cannelle 10 minutes.', 'Servir la viande garnie de pruneaux, amandes grillées et sésame.'],
+      ar: ['اطهي اللحم مع البصل والتوابل والزيت والزبدة و500 مل ماء مغطى حوالي ساعة ونصف.', 'اطهي البرقوق على حدة مع قليل من المرق والعسل والقرفة 10 دقائق.', 'قدمي اللحم مزينا بالبرقوق واللوز المحمر والجنجلان.'],
+    },
+  },
+  {
+    id: 'tagine_kefta_eggs', moroccan: true, meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('1 portion (≈300 g)', '1 portion (≈300 g)', 'حصة (≈300 غ)'),
+    prepMin: 20, cookMin: 30,
+    name: S('Kefta tagine with tomato & eggs', 'Tajine de kefta aux tomates et œufs', 'طاجين الكفتة بالطماطم والبيض'),
+    ingredients: ing('beef_ground_85:500 tomato:600 onion:150 egg:200 garlic:10 olive_oil:20 cumin:4 paprika:4 parsley:15 coriander:15 salt:6'),
+    steps: {
+      en: ['Mix the meat with half the herbs, cumin, paprika and salt; shape small balls.', 'Cook grated tomatoes, onion, garlic, oil and spices for 15 minutes.', 'Add the meatballs, cover and cook 10 minutes.', 'Crack the eggs on top, cover and cook until set. Sprinkle with herbs.'],
+      fr: ['Mélanger la viande avec la moitié des herbes, cumin, paprika et sel ; former des boulettes.', 'Cuire tomates râpées, oignon, ail, huile et épices 15 minutes.', 'Ajouter les boulettes, couvrir et cuire 10 minutes.', 'Casser les œufs dessus, couvrir jusqu’à ce qu’ils prennent. Parsemer d’herbes.'],
+      ar: ['اخلطي اللحم المفروم مع نصف الأعشاب والكمون والتحميرة والملح، وشكلي كويرات صغيرة.', 'اطهي الطماطم المحكوكة مع البصل والثوم والزيت والتوابل 15 دقيقة.', 'أضيفي الكويرات وغطي الطاجين 10 دقائق.', 'اكسري البيض فوقها وغطيها حتى ينضج، ثم رشي الأعشاب.'],
+    },
+  },
+  {
+    id: 'tagine_vegetables', moroccan: true, meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('1 portion (≈350 g)', '1 portion (≈350 g)', 'حصة (≈350 غ)'),
+    prepMin: 20, cookMin: 50, budget: true,
+    name: S('Vegetable tagine', 'Tajine de légumes', 'طاجين الخضر'),
+    ingredients: ing('potato_raw:500 carrot:300 zucchini:300 tomato:300 onion:150 peas_green:150 olives_green:60 olive_oil:40 ginger_ground:3 turmeric:3 paprika:3 coriander:15 salt:6'),
+    steps: {
+      en: ['Place sliced onion and tomato in the tagine with oil, spices and herbs.', 'Arrange potatoes, carrots, zucchini and peas on top; add 250 ml water.', 'Cover and cook on low heat 45–50 minutes. Add olives at the end.'],
+      fr: ['Disposer oignon et tomate émincés dans le tajine avec huile, épices et herbes.', 'Ranger pommes de terre, carottes, courgettes et petits pois ; ajouter 250 ml d’eau.', 'Couvrir et cuire à feu doux 45 à 50 minutes. Ajouter les olives à la fin.'],
+      ar: ['ضعي البصل والطماطم المقطعين في الطاجين مع الزيت والتوابل والأعشاب.', 'رتبي البطاطس والجزر والكوسة والجلبانة فوقها وأضيفي 250 مل ماء.', 'غطيه واتركيه على نار هادئة 45 إلى 50 دقيقة، والزيتون في الأخير.'],
+    },
+  },
+  {
+    id: 'tagine_fish', moroccan: true, meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('1 portion (≈350 g)', '1 portion (≈350 g)', 'حصة (≈350 غ)'),
+    prepMin: 25, cookMin: 40,
+    name: S('Fish tagine with chermoula', 'Tajine de poisson à la chermoula', 'طاجين الحوت بالشرمولة'),
+    ingredients: ing('whiting_raw:600 potato_raw:400 tomato:400 pepper_green:150 carrot:150 garlic:15 olive_oil:40 cumin:3 paprika:4 coriander:20 lemon_juice:30 salt:6'),
+    steps: {
+      en: ['Make chermoula: blend coriander, garlic, cumin, paprika, lemon juice, half the oil and salt.', 'Coat the fish with half the chermoula and let rest 20 minutes.', 'Layer sliced potatoes and carrots in the tagine, then tomatoes and peppers; add remaining chermoula and 150 ml water.', 'Cook 25 minutes, place the fish on top and cook 15 more minutes covered.'],
+      fr: ['Préparer la chermoula : mixer coriandre, ail, cumin, paprika, citron, la moitié de l’huile et le sel.', 'Enrober le poisson de la moitié de la chermoula, laisser reposer 20 minutes.', 'Disposer pommes de terre et carottes en rondelles, puis tomates et poivrons ; ajouter le reste de chermoula et 150 ml d’eau.', 'Cuire 25 minutes, poser le poisson et cuire encore 15 minutes à couvert.'],
+      ar: ['حضري الشرمولة: اخلطي القزبور والثوم والكمون والتحميرة والحامض ونصف الزيت والملح.', 'تبلي الحوت بنصف الشرمولة واتركيه 20 دقيقة.', 'رتبي البطاطس والجزر شرائح ثم الطماطم والفلفل، وأضيفي باقي الشرمولة و150 مل ماء.', 'اطهي 25 دقيقة، ثم ضعي الحوت فوقها واتركيه 15 دقيقة مغطى.'],
+    },
+  },
+  {
+    id: 'rfissa', moroccan: true, meals: ['lunch'], kind: 'main', servings: 6, serving: S('1 plate (≈400 g)', '1 assiette (≈400 g)', 'صحن (≈400 غ)'),
+    prepMin: 40, cookMin: 90,
+    name: S('Rfissa (chicken, lentils & msemen)', 'Rfissa (poulet, lentilles et msemen)', 'الرفيسة'),
+    note: S('Fenugreek and ras el hanout are used in small amounts and are not in the reference database; their contribution is not counted.', 'Le fenugrec et le ras el hanout, en petites quantités, ne sont pas dans la base de référence ; ils ne sont pas comptés.', 'الحلبة ورأس الحانوت بكميات صغيرة غير موجودين في قاعدة البيانات ولم يتم حسابهما.'),
+    ingredients: ing('flour_white:400 semolina:100 sunflower_oil:60 butter:20 chicken_leg_skin_raw:1200 lentils_raw:150 onion:400 olive_oil:30 ginger_ground:4 turmeric:3 black_pepper:2 coriander:15 salt:10'),
+    steps: {
+      en: ['Prepare thin msemen with the flour, semolina, salt, water and oil (see the msemen recipe), then tear into strips.', 'Cook chicken with sliced onions, spices, herbs, olive oil and 1.5 L water for 50 minutes.', 'Add the lentils and cook 30 more minutes.', 'Steam the msemen strips briefly, place them in a dish, and top with chicken, lentils and broth.'],
+      fr: ['Préparer des msemen fins avec farine, semoule, sel, eau et huile (voir la recette), puis les déchirer en lanières.', 'Cuire le poulet avec les oignons émincés, épices, herbes, huile d’olive et 1,5 L d’eau 50 minutes.', 'Ajouter les lentilles et cuire encore 30 minutes.', 'Réchauffer les lanières à la vapeur, les disposer dans un plat et napper de poulet, lentilles et bouillon.'],
+      ar: ['حضري مسمن رقيق بالدقيق والسميد والملح والماء والزيت ثم قطعيه شرائح.', 'اطهي الدجاج مع البصل المشرح والتوابل والأعشاب وزيت الزيتون و1.5 لتر ماء لمدة 50 دقيقة.', 'أضيفي العدس واتركيه 30 دقيقة أخرى.', 'فوري شرائح المسمن قليلا، وضعيها في الطبق ثم الدجاج والعدس والمرق فوقها.'],
+    },
+  },
+  {
+    id: 'loubia', moroccan: true, meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('1 bowl (≈300 g)', '1 bol (≈300 g)', 'زلافة (≈300 غ)'),
+    prepMin: 10, cookMin: 70, budget: true,
+    name: S('Loubia (white beans in tomato sauce)', 'Loubia (haricots blancs à la tomate)', 'اللوبيا'),
+    ingredients: ing('white_beans_raw:300 tomato:400 onion:150 garlic:15 olive_oil:30 cumin:3 paprika:4 coriander:10 parsley:10 salt:6'),
+    steps: {
+      en: ['Soak the beans overnight and drain.', 'Put all ingredients in a pot with 1.2 L water.', 'Simmer 60–70 minutes until the beans are soft and the sauce is thick.'],
+      fr: ['Faire tremper les haricots la veille et égoutter.', 'Mettre tous les ingrédients dans une marmite avec 1,2 L d’eau.', 'Mijoter 60 à 70 minutes jusqu’à ce que les haricots soient tendres et la sauce épaisse.'],
+      ar: ['انقعي اللوبيا من الليلة السابقة وصفيها.', 'ضعي جميع المكونات في قدر مع 1.2 لتر ماء.', 'اتركيها 60 إلى 70 دقيقة حتى تنضج اللوبيا وتتعقد المرقة.'],
+    },
+  },
+  {
+    id: 'adass', moroccan: true, meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('1 bowl (≈300 g)', '1 bol (≈300 g)', 'زلافة (≈300 غ)'),
+    prepMin: 10, cookMin: 40, budget: true,
+    name: S('Moroccan lentils (adass)', 'Lentilles à la marocaine', 'العدس بالطريقة المغربية'),
+    ingredients: ing('lentils_raw:300 tomato:300 onion:150 garlic:10 olive_oil:30 cumin:3 paprika:3 coriander:10 salt:6'),
+    steps: {
+      en: ['Rinse the lentils.', 'Cook all ingredients with 1.2 L water for 35–40 minutes until creamy.', 'Adjust seasoning and serve with bread or alone.'],
+      fr: ['Rincer les lentilles.', 'Cuire tous les ingrédients avec 1,2 L d’eau 35 à 40 minutes.', 'Rectifier l’assaisonnement et servir.'],
+      ar: ['اغسلي العدس.', 'اطهي جميع المكونات مع 1.2 لتر ماء لمدة 35 إلى 40 دقيقة.', 'عدلي الملح وقدميه.'],
+    },
+  },
+  {
+    id: 'moroccan_salad', moroccan: true, meals: ['lunch', 'dinner', 'snack'], kind: 'salad', servings: 4, serving: S('1 bowl (≈230 g)', '1 bol (≈230 g)', 'زلافة (≈230 غ)'),
+    prepMin: 15, cookMin: 0, budget: true,
+    name: S('Moroccan tomato & cucumber salad', 'Salade marocaine tomates-concombre', 'شلاضة مغربية'),
+    ingredients: ing('tomato:400 cucumber:300 onion:100 pepper_green:100 olive_oil:20 lemon_juice:20 coriander:10 cumin:1 salt:3'),
+    steps: {
+      en: ['Dice tomatoes, cucumber, onion and pepper finely.', 'Mix with chopped coriander, oil, lemon juice, cumin and salt just before serving.'],
+      fr: ['Couper finement tomates, concombre, oignon et poivron.', 'Mélanger avec coriandre, huile, citron, cumin et sel juste avant de servir.'],
+      ar: ['قطعي الطماطم والخيار والبصل والفلفل قطعا صغيرة.', 'اخلطيها مع القزبور والزيت والحامض والكمون والملح قبل التقديم.'],
+    },
+  },
+  {
+    id: 'carrot_salad', moroccan: true, meals: ['lunch', 'dinner', 'snack'], kind: 'salad', servings: 4, serving: S('1 small plate (≈140 g)', '1 petite assiette (≈140 g)', 'صحن صغير (≈140 غ)'),
+    prepMin: 10, cookMin: 15, budget: true,
+    name: S('Carrot salad with cumin', 'Salade de carottes au cumin', 'شلاضة الجزر بالكمون'),
+    ingredients: ing('carrot_boiled:500 garlic:5 olive_oil:20 cumin:3 lemon_juice:15 parsley:10 salt:3'),
+    steps: {
+      en: ['Boil the sliced carrots with the garlic until just tender; drain.', 'Toss with oil, lemon juice, cumin, parsley and salt.'],
+      fr: ['Cuire les carottes en rondelles avec l’ail jusqu’à tendreté ; égoutter.', 'Mélanger avec huile, citron, cumin, persil et sel.'],
+      ar: ['اسلقي الجزر المقطع مع الثوم حتى ينضج قليلا ثم صفيه.', 'اخلطيه مع الزيت والحامض والكمون والمعدنوس والملح.'],
+    },
+  },
+  {
+    id: 'beet_salad', moroccan: true, meals: ['lunch', 'dinner', 'snack'], kind: 'salad', servings: 4, serving: S('1 small plate (≈145 g)', '1 petite assiette (≈145 g)', 'صحن صغير (≈145 غ)'),
+    prepMin: 10, cookMin: 40, budget: true,
+    name: S('Beetroot salad', 'Salade de betteraves', 'شلاضة الباربا'),
+    ingredients: ing('beet:500 olive_oil:15 vinegar:15 onion:50 parsley:10 cumin:1 salt:3'),
+    steps: {
+      en: ['Boil the beets whole until tender (35–40 min), peel and dice.', 'Mix with chopped onion, parsley, oil, vinegar, cumin and salt.'],
+      fr: ['Cuire les betteraves entières jusqu’à tendreté (35–40 min), peler et couper en dés.', 'Mélanger avec oignon, persil, huile, vinaigre, cumin et sel.'],
+      ar: ['اسلقي الباربا كاملة حتى تنضج (35-40 دقيقة)، ثم قشريها وقطعيها.', 'اخلطيها مع البصل والمعدنوس والزيت والخل والكمون والملح.'],
+    },
+  },
+  {
+    id: 'sardines_tomato', moroccan: true, meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 plate (≈200 g)', '1 assiette (≈200 g)', 'صحن (≈200 غ)'),
+    prepMin: 10, cookMin: 0, budget: true,
+    name: S('Sardines with tomato, onion & bread', 'Sardines, tomates, oignon et pain', 'سردين بالطماطم والبصل مع الخبز'),
+    ingredients: ing('sardine_canned_oil:125 tomato:150 onion:30 lemon_juice:10 cumin:1 parsley:5 bread_whole:80'),
+    steps: {
+      en: ['Drain the sardines.', 'Dice tomato and onion; mix with parsley, lemon juice and cumin.', 'Serve the sardines over the tomato mix with whole-wheat bread.'],
+      fr: ['Égoutter les sardines.', 'Couper tomate et oignon ; mélanger avec persil, citron et cumin.', 'Servir les sardines sur ce mélange avec du pain complet.'],
+      ar: ['صفي السردين من الزيت.', 'قطعي الطماطم والبصل واخلطيهما مع المعدنوس والحامض والكمون.', 'قدمي السردين فوق الخليط مع الخبز الكامل.'],
+    },
+  },
+  {
+    id: 'msemen', moroccan: true, meals: ['breakfast', 'snack'], kind: 'bread', servings: 8, serving: S('1 msemen (≈75 g)', '1 msemen (≈75 g)', 'مسمنة واحدة (≈75 غ)'),
+    prepMin: 40, cookMin: 25,
+    name: S('Msemen (square pancakes)', 'Msemen (crêpes feuilletées)', 'المسمن'),
+    ingredients: ing('flour_white:300 semolina:150 sunflower_oil:50 butter:30 salt:5'),
+    steps: {
+      en: ['Knead flour, semolina, salt and about 280 ml warm water into a soft, smooth dough (10 minutes).', 'Divide into 8 balls, oil them and rest 10 minutes.', 'Spread each ball very thin on an oiled surface, brush with melted butter, sprinkle semolina and fold into a square.', 'Cook on a hot pan 2–3 minutes per side until golden.'],
+      fr: ['Pétrir farine, semoule, sel et environ 280 ml d’eau tiède jusqu’à obtenir une pâte souple (10 minutes).', 'Diviser en 8 boules, les huiler et laisser reposer 10 minutes.', 'Étaler chaque boule très finement sur un plan huilé, badigeonner de beurre fondu, saupoudrer de semoule et plier en carré.', 'Cuire à la poêle chaude 2 à 3 minutes de chaque côté.'],
+      ar: ['اعجني الدقيق والسميد والملح مع حوالي 280 مل ماء دافئ حتى تحصلي على عجين لين (10 دقائق).', 'قسميه إلى 8 كويرات، ادهنيها بالزيت واتركيها 10 دقائق.', 'افردي كل كويرة رقيقة جدا، ادهنيها بالزبدة الذائبة ورشي السميد ثم طويها على شكل مربع.', 'اطهيها في مقلاة ساخنة 2-3 دقائق لكل جهة.'],
+    },
+  },
+  {
+    id: 'baghrir', moroccan: true, meals: ['breakfast', 'snack'], kind: 'bread', servings: 12, serving: S('1 baghrir (≈45 g)', '1 baghrir (≈45 g)', 'بغريرة واحدة (≈45 غ)'),
+    prepMin: 10, cookMin: 30,
+    name: S('Baghrir (plain)', 'Baghrir (nature)', 'البغرير (بدون إضافات)'),
+    note: S('Yeast and baking powder (a few grams) are not counted. Toppings are not included — see the honey & butter variation.', 'La levure et la levure chimique (quelques grammes) ne sont pas comptées. Garnitures non incluses — voir la variante miel-beurre.', 'الخميرة لم تحسب. الإضافات غير محسوبة — انظري وصفة البغرير بالعسل والزبدة.'),
+    ingredients: ing('semolina:250 flour_white:100 sugar:5 salt:4'),
+    steps: {
+      en: ['Blend semolina, flour, salt, sugar, yeast, baking powder and about 600 ml lukewarm water for 2 minutes.', 'Let the batter rest 30 minutes until bubbly.', 'Pour a ladle onto a hot non-stick pan and cook on one side only until the surface is full of holes and dry.'],
+      fr: ['Mixer semoule, farine, sel, sucre, levure, levure chimique et environ 600 ml d’eau tiède 2 minutes.', 'Laisser reposer 30 minutes jusqu’à formation de bulles.', 'Verser une louche dans une poêle antiadhésive chaude et cuire d’un seul côté jusqu’à ce que la surface soit pleine de trous et sèche.'],
+      ar: ['اخلطي السميد والدقيق والملح والسكر والخميرة والخميرة الكيميائية مع حوالي 600 مل ماء دافئ لمدة دقيقتين.', 'اتركي الخليط 30 دقيقة حتى تظهر الفقاعات.', 'صبي مغرفة في مقلاة ساخنة واطهيها من جهة واحدة حتى تمتلئ بالثقوب وتجف.'],
+    },
+  },
+  {
+    id: 'baghrir_honey', variantOf: 'baghrir', variant: S('With honey & butter', 'Au miel et beurre', 'بالعسل والزبدة'), moroccan: true, meals: ['breakfast', 'snack'], kind: 'bread', servings: 12,
+    serving: S('1 baghrir with topping', '1 baghrir garni', 'بغريرة واحدة بالإضافات'), prepMin: 10, cookMin: 30,
+    name: S('Baghrir with honey & butter', 'Baghrir au miel et beurre', 'البغرير بالعسل والزبدة'),
+    ingredients: ing('semolina:250 flour_white:100 sugar:5 salt:4 butter:60 honey:120'),
+    steps: {
+      en: ['Prepare plain baghrir.', 'Melt butter with honey and pour a spoonful over each baghrir.'],
+      fr: ['Préparer les baghrir nature.', 'Faire fondre le beurre avec le miel et en verser une cuillère sur chaque baghrir.'],
+      ar: ['حضري البغرير.', 'ذوبي الزبدة مع العسل وصبي ملعقة فوق كل بغريرة.'],
+    },
+  },
+  {
+    id: 'khobz', moroccan: true, meals: ['breakfast', 'lunch', 'dinner'], kind: 'bread', servings: 8, serving: S('1/8 loaf (≈80 g)', '1/8 de pain (≈80 g)', 'ثمن خبزة (≈80 غ)'),
+    prepMin: 20, cookMin: 25, budget: true,
+    name: S('Moroccan bread (khobz)', 'Pain marocain (khobz)', 'الخبز المغربي'),
+    note: S('Yeast (≈7 g) is not counted.', 'La levure (≈7 g) n’est pas comptée.', 'الخميرة (≈7 غ) غير محسوبة.'),
+    ingredients: ing('flour_white:400 flour_whole:100 salt:8 olive_oil:15 sugar:5'),
+    steps: {
+      en: ['Mix flours, salt, sugar, yeast, oil and about 330 ml warm water; knead 10 minutes.', 'Shape into 2 round flat loaves, cover and let rise 1 hour.', 'Prick with a fork and bake at 220 °C for 20–25 minutes.'],
+      fr: ['Mélanger farines, sel, sucre, levure, huile et environ 330 ml d’eau tiède ; pétrir 10 minutes.', 'Façonner 2 pains ronds et plats, couvrir et laisser lever 1 heure.', 'Piquer à la fourchette et cuire à 220 °C 20 à 25 minutes.'],
+      ar: ['اخلطي الدقيقين والملح والسكر والخميرة والزيت مع حوالي 330 مل ماء دافئ واعجنيه 10 دقائق.', 'شكلي خبزتين مستديرتين وغطيهما واتركيهما تختمران ساعة.', 'اثقبيهما بالشوكة واخبزيهما في 220 درجة لمدة 20 إلى 25 دقيقة.'],
+    },
+  },
+  {
+    id: 'harcha', moroccan: true, meals: ['breakfast', 'snack'], kind: 'bread', servings: 8, serving: S('1 harcha (≈80 g)', '1 harcha (≈80 g)', 'حرشة واحدة (≈80 غ)'),
+    prepMin: 15, cookMin: 20,
+    name: S('Harcha (semolina griddle bread)', 'Harcha (galette de semoule)', 'الحرشة'),
+    ingredients: ing('semolina:400 butter:80 milk_whole:200 sugar:30 salt:5'),
+    steps: {
+      en: ['Mix semolina, sugar, salt and baking powder; rub in the melted butter.', 'Add milk gradually to form a soft dough; rest 10 minutes.', 'Shape small discs, roll in semolina and cook on a low-heat pan 8–10 minutes per side.'],
+      fr: ['Mélanger semoule, sucre, sel et levure chimique ; incorporer le beurre fondu.', 'Ajouter le lait progressivement pour obtenir une pâte souple ; repos 10 minutes.', 'Former des galettes, les rouler dans la semoule et cuire à feu doux 8 à 10 minutes par face.'],
+      ar: ['اخلطي السميد والسكر والملح والخميرة الكيميائية، ثم أضيفي الزبدة الذائبة وافركيه.', 'أضيفي الحليب تدريجيا حتى تحصلي على عجين لين واتركيه 10 دقائق.', 'شكلي أقراصا صغيرة، مرريها في السميد واطهيها على نار هادئة 8-10 دقائق لكل جهة.'],
+    },
+  },
+  {
+    id: 'seffa', moroccan: true, meals: ['lunch', 'snack'], kind: 'dessert', servings: 8, serving: S('1 plate (≈90 g)', '1 assiette (≈90 g)', 'صحن (≈90 غ)'),
+    prepMin: 10, cookMin: 30,
+    name: S('Seffa (sweet vermicelli)', 'Seffa (vermicelles sucrés)', 'السفة بالشعرية'),
+    ingredients: ing('vermicelli_dry:500 butter:50 sugar_powdered:50 cinnamon:5 almonds:100'),
+    steps: {
+      en: ['Steam the vermicelli three times, separating it with a little water and butter each time.', 'Arrange in a dome; decorate with powdered sugar, cinnamon and toasted ground almonds.'],
+      fr: ['Cuire les vermicelles à la vapeur trois fois en les aérant avec un peu d’eau et de beurre.', 'Dresser en dôme ; décorer de sucre glace, cannelle et amandes grillées moulues.'],
+      ar: ['فوري الشعرية ثلاث مرات مع تفريقها بقليل من الماء والزبدة كل مرة.', 'شكليها على شكل قبة وزينيها بالسكر الناعم والقرفة واللوز المحمر المطحون.'],
+    },
+  },
+  {
+    id: 'oranges_cinnamon', moroccan: true, meals: ['snack', 'lunch', 'dinner'], kind: 'dessert', servings: 4, serving: S('1 small plate (≈150 g)', '1 petite assiette (≈150 g)', 'صحن صغير (≈150 غ)'),
+    prepMin: 10, cookMin: 0, budget: true,
+    name: S('Oranges with cinnamon', 'Oranges à la cannelle', 'البرتقال بالقرفة'),
+    ingredients: ing('orange:600 cinnamon:2 mint:5'),
+    steps: {
+      en: ['Peel the oranges and slice into rounds.', 'Sprinkle with cinnamon and chopped mint. No sugar needed.'],
+      fr: ['Peler les oranges et les couper en rondelles.', 'Saupoudrer de cannelle et de menthe ciselée. Sans sucre ajouté.'],
+      ar: ['قشري البرتقال وقطعيه دوائر.', 'رشي القرفة والنعناع المقطع. بدون سكر.'],
+    },
+  },
+  {
+    id: 'eggs_tomato', moroccan: true, meals: ['breakfast', 'dinner'], kind: 'breakfast', servings: 2, serving: S('1 portion (≈290 g)', '1 portion (≈290 g)', 'حصة (≈290 غ)'),
+    prepMin: 5, cookMin: 15, budget: true,
+    name: S('Eggs with tomato (bid b’tomatish)', 'Œufs à la tomate', 'البيض بالطماطم'),
+    ingredients: ing('egg:200 tomato:300 onion:60 olive_oil:15 cumin:2 paprika:2 parsley:5 salt:2'),
+    steps: {
+      en: ['Cook grated tomato, onion, oil and spices for 8–10 minutes.', 'Crack the eggs into the sauce, cover and cook 4–5 minutes. Add parsley.'],
+      fr: ['Cuire tomate râpée, oignon, huile et épices 8 à 10 minutes.', 'Casser les œufs dans la sauce, couvrir 4 à 5 minutes. Ajouter le persil.'],
+      ar: ['اطهي الطماطم المحكوكة مع البصل والزيت والتوابل 8-10 دقائق.', 'اكسري البيض في المرقة وغطيه 4-5 دقائق ثم المعدنوس.'],
+    },
+  },
+  {
+    id: 'lben_oats', moroccan: true, meals: ['breakfast', 'snack'], kind: 'breakfast', servings: 1, serving: S('1 bowl (≈310 g)', '1 bol (≈310 g)', 'زلافة (≈310 غ)'),
+    prepMin: 5, cookMin: 0, budget: true,
+    name: S('Lben with oats & dates', 'Lben, flocons d’avoine et dattes', 'اللبن بالشوفان والتمر'),
+    ingredients: ing('buttermilk:250 oats:40 dates_deglet:20'),
+    steps: {
+      en: ['Mix oats into the cold lben and let soften 5 minutes.', 'Top with chopped dates.'],
+      fr: ['Mélanger les flocons au lben froid et laisser gonfler 5 minutes.', 'Garnir de dattes hachées.'],
+      ar: ['اخلطي الشوفان مع اللبن البارد واتركيه 5 دقائق.', 'زينيه بالتمر المقطع.'],
+    },
+  },
+  {
+    id: 'moroccan_breakfast_plate', moroccan: true, meals: ['breakfast'], kind: 'breakfast', servings: 1, serving: S('1 plate', '1 assiette', 'صحن واحد'),
+    prepMin: 10, cookMin: 10, budget: true,
+    name: S('Moroccan-style breakfast plate', 'Petit-déjeuner à la marocaine', 'فطور مغربي متوازن'),
+    ingredients: ing('bread_whole:60 olive_oil:10 olives_black:20 egg_boiled:50 tomato:80 cheese_feta:20 tea_green:250'),
+    steps: {
+      en: ['Boil the egg 9 minutes.', 'Serve with whole-wheat bread, a little olive oil for dipping, olives, sliced tomato, cheese and unsweetened tea.'],
+      fr: ['Cuire l’œuf 9 minutes.', 'Servir avec pain complet, un peu d’huile d’olive, olives, tomate, fromage et thé non sucré.'],
+      ar: ['اسلقي البيضة 9 دقائق.', 'قدميها مع خبز كامل وقليل من زيت الزيتون والزيتون والطماطم والجبن وأتاي بدون سكر.'],
+    },
+  },
+  {
+    id: 'mint_tea_sugar', moroccan: true, meals: ['snack'], kind: 'drink', servings: 4, serving: S('1 glass (≈200 ml)', '1 verre (≈200 ml)', 'كأس (≈200 مل)'),
+    prepMin: 2, cookMin: 8,
+    name: S('Mint tea (traditional, sweetened)', 'Thé à la menthe (traditionnel, sucré)', 'أتاي بالنعناع (بالسكر)'),
+    note: S('Mint leaves are infused and removed, so they are not counted.', 'Les feuilles de menthe sont infusées puis retirées : non comptées.', 'النعناع ينقع ثم يزال، لذلك لم يحسب.'),
+    ingredients: ing('tea_green:800 mint:15:x sugar:40'),
+    steps: {
+      en: ['Rinse green tea leaves with a little boiling water and discard it.', 'Add boiling water, mint and sugar; steep 3–5 minutes.', 'Pour from a height to mix and serve.'],
+      fr: ['Rincer le thé vert avec un peu d’eau bouillante et la jeter.', 'Ajouter l’eau bouillante, la menthe et le sucre ; infuser 3 à 5 minutes.', 'Verser de haut pour mélanger et servir.'],
+      ar: ['اشطفي الأتاي بقليل من الماء المغلي وتخلصي منه.', 'أضيفي الماء المغلي والنعناع والسكر واتركيه 3-5 دقائق.', 'صبيه من الأعلى ليختلط وقدميه.'],
+    },
+  },
+  {
+    id: 'mint_tea_light', variantOf: 'mint_tea_sugar', variant: S('Lightly sweetened', 'Peu sucré', 'قليل السكر'), moroccan: true, meals: ['snack'], kind: 'drink', servings: 4,
+    serving: S('1 glass (≈200 ml)', '1 verre (≈200 ml)', 'كأس (≈200 مل)'), prepMin: 2, cookMin: 8,
+    name: S('Mint tea (lightly sweetened)', 'Thé à la menthe (peu sucré)', 'أتاي بالنعناع (قليل السكر)'),
+    ingredients: ing('tea_green:800 mint:15:x sugar:12'),
+    steps: {
+      en: ['Same method with about a third of the sugar. You can reduce it gradually over a few weeks.'],
+      fr: ['Même méthode avec environ un tiers du sucre. On peut réduire progressivement sur quelques semaines.'],
+      ar: ['نفس الطريقة بثلث كمية السكر تقريبا. يمكن التقليل تدريجيا خلال أسابيع.'],
+    },
+  },
+  {
+    id: 'chicken_brochettes', moroccan: true, meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('2 skewers (≈170 g)', '2 brochettes (≈170 g)', 'قضيبان (≈170 غ)'),
+    prepMin: 15, cookMin: 15,
+    name: S('Chicken brochettes', 'Brochettes de poulet', 'القطبان بالدجاج'),
+    ingredients: ing('chicken_breast_raw:600 onion:100 olive_oil:20 cumin:4 paprika:4 garlic:10 parsley:10 lemon_juice:20 salt:5'),
+    steps: {
+      en: ['Cut chicken into cubes and marinate with grated onion, garlic, spices, parsley, lemon juice and oil for at least 30 minutes.', 'Thread onto skewers and grill 12–15 minutes, turning regularly.'],
+      fr: ['Couper le poulet en cubes et mariner avec oignon râpé, ail, épices, persil, citron et huile au moins 30 minutes.', 'Enfiler sur des brochettes et griller 12 à 15 minutes en retournant.'],
+      ar: ['قطعي الدجاج مكعبات وتبليه بالبصل المحكوك والثوم والتوابل والمعدنوس والحامض والزيت 30 دقيقة على الأقل.', 'ادخليه في القضبان واشويه 12-15 دقيقة مع التقليب.'],
+    },
+  },
+  {
+    id: 'chickpea_soup', moroccan: true, meals: ['lunch', 'dinner'], kind: 'soup', servings: 4, serving: S('1 bowl (≈350 ml)', '1 bol (≈350 ml)', 'زلافة (≈350 مل)'),
+    prepMin: 15, cookMin: 60, budget: true,
+    name: S('Chickpea & vegetable soup', 'Soupe de pois chiches et légumes', 'حساء الحمص والخضر'),
+    ingredients: ing('chickpeas_raw:200 carrot:150 onion:100 celery:50 tomato:200 olive_oil:20 cumin:3 turmeric:2 salt:6 coriander:10'),
+    steps: {
+      en: ['Soak chickpeas overnight.', 'Cook all ingredients with 1.5 L water for 50–60 minutes.', 'Blend partly for a creamy texture and serve with coriander.'],
+      fr: ['Faire tremper les pois chiches la veille.', 'Cuire tous les ingrédients avec 1,5 L d’eau 50 à 60 minutes.', 'Mixer en partie pour une texture onctueuse et servir avec la coriandre.'],
+      ar: ['انقعي الحمص من الليلة السابقة.', 'اطهي جميع المكونات مع 1.5 لتر ماء 50-60 دقيقة.', 'اطحني جزءا منه ليصبح كريميا وقدميه بالقزبور.'],
+    },
+  },
+  {
+    id: 'vegetable_soup', moroccan: true, meals: ['lunch', 'dinner'], kind: 'soup', servings: 4, serving: S('1 bowl (≈350 ml)', '1 bol (≈350 ml)', 'زلافة (≈350 مل)'),
+    prepMin: 15, cookMin: 30, budget: true,
+    name: S('Moroccan vegetable soup (chorba)', 'Soupe de légumes (chorba)', 'شربة الخضر'),
+    ingredients: ing('potato_raw:300 carrot:200 zucchini:200 onion:100 turnip:150 celery:50 olive_oil:15 salt:5 parsley:10'),
+    steps: {
+      en: ['Peel and chop all vegetables.', 'Cook with oil, salt and 1.2 L water for 25–30 minutes.', 'Blend and finish with parsley.'],
+      fr: ['Éplucher et couper tous les légumes.', 'Cuire avec huile, sel et 1,2 L d’eau 25 à 30 minutes.', 'Mixer et finir avec le persil.'],
+      ar: ['قشري وقطعي جميع الخضر.', 'اطهيها مع الزيت والملح و1.2 لتر ماء 25-30 دقيقة.', 'اطحنيها وزينيها بالمعدنوس.'],
+    },
+  },
+  // ---------- International ----------
+  {
+    id: 'potato_tomato_eggs', moroccan: false, meals: ['breakfast', 'lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 portion (≈410 g)', '1 portion (≈410 g)', 'حصة (≈410 غ)'),
+    prepMin: 10, cookMin: 20, budget: true,
+    name: S('Potato, tomato & onion skillet with eggs', 'Poêlée pommes de terre, tomates, oignon et œufs', 'مقلاة البطاطس والطماطم والبصل بالبيض'),
+    ingredients: ing('potato_raw:300 tomato:200 onion:100 egg:200 olive_oil:15 paprika:2 cumin:1 salt:3'),
+    steps: {
+      en: ['Dice potatoes and cook in the oil with onion, covered, 10–12 minutes.', 'Add diced tomato and spices; cook 5 minutes.', 'Make 4 wells, crack in the eggs, cover and cook until set.'],
+      fr: ['Couper les pommes de terre en dés et les cuire dans l’huile avec l’oignon, à couvert, 10 à 12 minutes.', 'Ajouter la tomate et les épices ; cuire 5 minutes.', 'Faire 4 puits, casser les œufs, couvrir jusqu’à ce qu’ils prennent.'],
+      ar: ['قطعي البطاطس مكعبات واطهيها في الزيت مع البصل مغطاة 10-12 دقيقة.', 'أضيفي الطماطم والتوابل 5 دقائق.', 'اعملي 4 حفر واكسري البيض وغطيه حتى ينضج.'],
+    },
+  },
+  {
+    id: 'tortilla', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 3, serving: S('1/3 omelette (≈220 g)', '1/3 d’omelette (≈220 g)', 'ثلث العجة (≈220 غ)'),
+    prepMin: 10, cookMin: 25, budget: true,
+    name: S('Potato omelette (tortilla)', 'Omelette aux pommes de terre (tortilla)', 'عجة البطاطس'),
+    ingredients: ing('egg:250 potato_raw:300 onion:100 olive_oil:20 salt:3'),
+    steps: {
+      en: ['Slice potatoes and onion thinly; cook gently in oil, covered, until soft (15 minutes).', 'Beat eggs with salt, mix with the potatoes.', 'Cook in the pan 5 minutes, flip using a plate and cook 3 more minutes.'],
+      fr: ['Émincer pommes de terre et oignon ; cuire doucement à couvert dans l’huile (15 minutes).', 'Battre les œufs avec le sel et mélanger aux pommes de terre.', 'Cuire 5 minutes, retourner à l’aide d’une assiette et cuire encore 3 minutes.'],
+      ar: ['قطعي البطاطس والبصل شرائح رقيقة واطهيها في الزيت مغطاة حتى تلين (15 دقيقة).', 'اخفقي البيض مع الملح واخلطيه مع البطاطس.', 'اطهيها 5 دقائق ثم اقلبيها بصحن واتركيها 3 دقائق.'],
+    },
+  },
+  {
+    id: 'chicken_rice_bowl', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 bowl (≈450 g)', '1 bol (≈450 g)', 'زلافة (≈450 غ)'),
+    prepMin: 10, cookMin: 25,
+    name: S('Chicken, rice & vegetable bowl', 'Bol poulet, riz et légumes', 'زلافة الدجاج والأرز والخضر'),
+    ingredients: ing('chicken_breast_raw:300 rice_white_raw:150 broccoli:200 carrot:100 olive_oil:15 garlic:5 salt:3 black_pepper:1'),
+    steps: {
+      en: ['Cook rice in 300 ml water, 15 minutes.', 'Steam broccoli and sliced carrots 6–8 minutes.', 'Pan-cook sliced chicken with garlic, oil, salt and pepper 8–10 minutes.', 'Assemble bowls.'],
+      fr: ['Cuire le riz dans 300 ml d’eau, 15 minutes.', 'Cuire brocoli et carottes à la vapeur 6 à 8 minutes.', 'Poêler le poulet émincé avec ail, huile, sel et poivre 8 à 10 minutes.', 'Assembler les bols.'],
+      ar: ['اطهي الأرز في 300 مل ماء 15 دقيقة.', 'اطهي البروكلي والجزر بالبخار 6-8 دقائق.', 'اطهي الدجاج المقطع مع الثوم والزيت والملح والإبزار 8-10 دقائق.', 'رتبي الزلايف.'],
+    },
+  },
+  {
+    id: 'tuna_salad', moroccan: false, meals: ['lunch', 'dinner'], kind: 'salad', servings: 2, serving: S('1 large plate (≈480 g)', '1 grande assiette (≈480 g)', 'صحن كبير (≈480 غ)'),
+    prepMin: 15, cookMin: 20, budget: true,
+    name: S('Tuna, potato & egg salad', 'Salade thon, pommes de terre et œuf', 'شلاضة التون والبطاطس والبيض'),
+    ingredients: ing('tuna_water:160 potato_boiled:200 egg_boiled:100 tomato:150 cucumber:150 lettuce:100 onion:40 olives_black:30 olive_oil:15 lemon_juice:15'),
+    steps: {
+      en: ['Boil potatoes and eggs; cool and slice.', 'Chop the vegetables.', 'Combine with drained tuna and olives, dress with oil and lemon.'],
+      fr: ['Cuire pommes de terre et œufs ; refroidir et trancher.', 'Couper les légumes.', 'Mélanger avec le thon égoutté et les olives, assaisonner d’huile et de citron.'],
+      ar: ['اسلقي البطاطس والبيض، بريديهما وقطعيهما.', 'قطعي الخضر.', 'اخلطيها مع التون المصفى والزيتون وأضيفي الزيت والحامض.'],
+    },
+  },
+  {
+    id: 'greek_yogurt_bowl', moroccan: false, meals: ['breakfast', 'snack'], kind: 'breakfast', servings: 1, serving: S('1 bowl (≈335 g)', '1 bol (≈335 g)', 'زلافة (≈335 غ)'),
+    prepMin: 5, cookMin: 0,
+    name: S('Greek yogurt, strawberries & walnuts', 'Yaourt grec, fraises et noix', 'ياغورت يوناني بالفراولة والكركاع'),
+    ingredients: ing('greek_yogurt_nonfat:200 strawberry:100 walnuts:15 oats:20'),
+    steps: { en: ['Layer yogurt, sliced strawberries, oats and chopped walnuts.'], fr: ['Superposer yaourt, fraises, flocons d’avoine et noix concassées.'], ar: ['رتبي الياغورت والفراولة والشوفان والكركاع المكسر.'] },
+  },
+  {
+    id: 'overnight_oats', moroccan: false, meals: ['breakfast'], kind: 'breakfast', servings: 1, serving: S('1 jar (≈360 g)', '1 bocal (≈360 g)', 'برطمان (≈360 غ)'),
+    prepMin: 5, cookMin: 0, budget: true,
+    name: S('Overnight oats with banana', 'Porridge froid à la banane', 'شوفان منقوع بالموز'),
+    ingredients: ing('oats:50 milk_semi:200 banana:100 chia:10 cinnamon:1'),
+    steps: { en: ['Mix oats, chia, cinnamon and milk in a jar; refrigerate overnight.', 'Top with sliced banana in the morning.'], fr: ['Mélanger flocons, chia, cannelle et lait dans un bocal ; réfrigérer une nuit.', 'Ajouter la banane le matin.'], ar: ['اخلطي الشوفان والشيا والقرفة والحليب في برطمان واتركيه في الثلاجة ليلة.', 'أضيفي الموز صباحا.'] },
+  },
+  {
+    id: 'pasta_tomato', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('1 plate (≈265 g)', '1 assiette (≈265 g)', 'صحن (≈265 غ)'),
+    prepMin: 10, cookMin: 20, budget: true,
+    name: S('Pasta with fresh tomato sauce', 'Pâtes à la sauce tomate maison', 'معكرونة بصلصة الطماطم'),
+    ingredients: ing('pasta_dry:320 tomato:600 onion:100 garlic:10 olive_oil:30 salt:5 black_pepper:1'),
+    steps: { en: ['Cook tomatoes, onion, garlic and oil 15 minutes.', 'Cook pasta in salted water as per package; drain.', 'Mix pasta with the sauce.'], fr: ['Cuire tomates, oignon, ail et huile 15 minutes.', 'Cuire les pâtes selon le paquet ; égoutter.', 'Mélanger avec la sauce.'], ar: ['اطهي الطماطم والبصل والثوم والزيت 15 دقيقة.', 'اسلقي المعكرونة حسب العلبة وصفيها.', 'اخلطيها مع الصلصة.'] },
+  },
+  {
+    id: 'baked_salmon', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 plate (≈490 g)', '1 assiette (≈490 g)', 'صحن (≈490 غ)'),
+    prepMin: 10, cookMin: 30,
+    name: S('Baked salmon with vegetables', 'Saumon au four et légumes', 'سلمون في الفرن مع الخضر'),
+    ingredients: ing('salmon_raw:300 potato_raw:300 zucchini:200 pepper_red:150 olive_oil:15 lemon_juice:15 garlic:5 salt:3'),
+    steps: { en: ['Roast sliced potatoes with half the oil at 200 °C for 15 minutes.', 'Add zucchini, pepper and salmon; drizzle with remaining oil, garlic and lemon.', 'Bake 15 more minutes.'], fr: ['Rôtir les pommes de terre avec la moitié de l’huile à 200 °C 15 minutes.', 'Ajouter courgette, poivron et saumon ; arroser du reste d’huile, ail et citron.', 'Cuire encore 15 minutes.'], ar: ['اشوي البطاطس بنصف الزيت في 200 درجة 15 دقيقة.', 'أضيفي الكوسة والفلفل والسلمون مع باقي الزيت والثوم والحامض.', 'اخبزيه 15 دقيقة أخرى.'] },
+  },
+  {
+    id: 'lentil_salad', moroccan: false, meals: ['lunch', 'dinner'], kind: 'salad', servings: 3, serving: S('1 bowl (≈290 g)', '1 bol (≈290 g)', 'زلافة (≈290 غ)'),
+    prepMin: 15, cookMin: 0, budget: true,
+    name: S('Lentil salad', 'Salade de lentilles', 'شلاضة العدس'),
+    ingredients: ing('lentils_cooked:450 tomato:150 cucumber:150 onion:50 parsley:15 olive_oil:20 lemon_juice:20 cumin:2 salt:3'),
+    steps: { en: ['Mix cooled cooked lentils with diced vegetables and parsley.', 'Dress with oil, lemon, cumin and salt.'], fr: ['Mélanger les lentilles cuites refroidies avec les légumes et le persil.', 'Assaisonner d’huile, citron, cumin et sel.'], ar: ['اخلطي العدس المطبوخ البارد مع الخضر والمعدنوس.', 'أضيفي الزيت والحامض والكمون والملح.'] },
+  },
+  {
+    id: 'chickpea_salad', moroccan: false, meals: ['lunch', 'dinner'], kind: 'salad', servings: 3, serving: S('1 bowl (≈290 g)', '1 bol (≈290 g)', 'زلافة (≈290 غ)'),
+    prepMin: 15, cookMin: 0, budget: true,
+    name: S('Chickpea salad', 'Salade de pois chiches', 'شلاضة الحمص'),
+    ingredients: ing('chickpeas_cooked:400 tomato:150 cucumber:150 pepper_red:100 onion:40 parsley:15 olive_oil:20 lemon_juice:20 salt:3'),
+    steps: { en: ['Combine chickpeas with chopped vegetables and parsley.', 'Dress with oil, lemon and salt.'], fr: ['Mélanger les pois chiches avec les légumes et le persil.', 'Assaisonner d’huile, citron et sel.'], ar: ['اخلطي الحمص مع الخضر المقطعة والمعدنوس.', 'أضيفي الزيت والحامض والملح.'] },
+  },
+  {
+    id: 'fruit_salad', moroccan: false, meals: ['snack', 'breakfast'], kind: 'dessert', servings: 4, serving: S('1 bowl (≈225 g)', '1 bol (≈225 g)', 'زلافة (≈225 غ)'),
+    prepMin: 15, cookMin: 0, budget: true,
+    name: S('Fresh fruit salad', 'Salade de fruits frais', 'سلطة الفواكه'),
+    ingredients: ing('orange:300 apple:200 banana:200 pomegranate:100 orange_juice:100 cinnamon:1 mint:5'),
+    steps: { en: ['Dice fruit, add pomegranate seeds.', 'Pour orange juice over, sprinkle cinnamon and mint. No added sugar.'], fr: ['Couper les fruits, ajouter les grains de grenade.', 'Arroser de jus d’orange, parsemer de cannelle et menthe. Sans sucre ajouté.'], ar: ['قطعي الفواكه وأضيفي حب الرمان.', 'أضيفي عصير البرتقال والقرفة والنعناع. بدون سكر مضاف.'] },
+  },
+  {
+    id: 'hummus_snack', moroccan: false, meals: ['snack'], kind: 'snack', servings: 2, serving: S('1 plate (≈230 g)', '1 assiette (≈230 g)', 'صحن (≈230 غ)'),
+    prepMin: 5, cookMin: 0,
+    name: S('Hummus with vegetable sticks', 'Houmous et bâtonnets de légumes', 'حمص بالطحينة مع أصابع الخضر'),
+    ingredients: ing('hummus:100 carrot:150 cucumber:150 bread_pita:60'),
+    steps: { en: ['Cut carrots and cucumber into sticks; serve with hummus and pita.'], fr: ['Couper carottes et concombre en bâtonnets ; servir avec houmous et pita.'], ar: ['قطعي الجزر والخيار أصابع وقدميها مع الحمص والخبز.'] },
+  },
+  {
+    id: 'egg_fried_rice', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 plate (≈390 g)', '1 assiette (≈390 g)', 'صحن (≈390 غ)'),
+    prepMin: 10, cookMin: 12, budget: true,
+    name: S('Egg & vegetable fried rice', 'Riz sauté aux œufs et légumes', 'أرز مقلي بالبيض والخضر'),
+    ingredients: ing('rice_white_cooked:400 egg:100 peas_green:100 carrot:100 onion:60 sunflower_oil:15 salt:3'),
+    steps: { en: ['Sauté onion and diced carrot in oil 4 minutes; add peas.', 'Push aside, scramble the eggs, then add rice and stir-fry 4 minutes. Season.'], fr: ['Faire sauter oignon et carotte dans l’huile 4 minutes ; ajouter les pois.', 'Pousser de côté, brouiller les œufs, puis ajouter le riz et sauter 4 minutes. Assaisonner.'], ar: ['شوحي البصل والجزر في الزيت 4 دقائق ثم أضيفي الجلبانة.', 'أبعديها جانبا واخفقي البيض ثم أضيفي الأرز وقلبيه 4 دقائق.'] },
+  },
+  {
+    id: 'spinach_omelette', moroccan: false, meals: ['breakfast', 'dinner'], kind: 'breakfast', servings: 1, serving: S('1 omelette (≈245 g)', '1 omelette (≈245 g)', 'عجة واحدة (≈245 غ)'),
+    prepMin: 5, cookMin: 6,
+    name: S('Spinach & feta omelette', 'Omelette épinards et feta', 'عجة بالسبانخ والفيتا'),
+    ingredients: ing('egg:150 spinach:60 cheese_feta:30 olive_oil:5'),
+    steps: { en: ['Wilt spinach in the oil 1 minute.', 'Pour in beaten eggs, add crumbled feta and cook until set; fold.'], fr: ['Faire tomber les épinards dans l’huile 1 minute.', 'Verser les œufs battus, ajouter la feta émiettée et cuire ; plier.'], ar: ['شوحي السبانخ في الزيت دقيقة واحدة.', 'أضيفي البيض المخفوق والفيتا المفتتة حتى ينضج ثم اطويها.'] },
+  },
+];
+
+export function getRecipe(id: string) { return RECIPES.find(r => r.id === id); }
+export function recipeName(r: Recipe, lang: string) { return (r.name as any)[lang === 'dar' ? 'ar' : lang] || r.name.en; }
+export function l3(v: L3 | undefined, lang: string) { if (!v) return ''; return (v as any)[lang === 'dar' ? 'ar' : lang] || v.en; }
+export function recipeSteps(r: Recipe, lang: string): string[] { return (r.steps as any)[lang === 'dar' ? 'ar' : lang] || r.steps.en; }
