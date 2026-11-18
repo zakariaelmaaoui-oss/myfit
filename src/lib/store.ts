@@ -218,7 +218,12 @@ class LocalBackend implements Backend {
   }
 }
 
-const URL_ = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+/** Accepts the project URL with or without a trailing "/rest/v1/" or "/" (common copy-paste variants). */
+export function normalizeSupabaseUrl(u?: string): string | undefined {
+  if (!u) return u;
+  return u.trim().replace(/\/+$/, '').replace(/\/(rest|auth|storage)\/v1$/, '').replace(/\/+$/, '');
+}
+const URL_ = normalizeSupabaseUrl(import.meta.env.VITE_SUPABASE_URL as string | undefined);
 const KEY_ = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 export const backend: Backend = URL_ && KEY_ ? new SupabaseBackend(URL_, KEY_) : new LocalBackend();
 export const newId = uuid;

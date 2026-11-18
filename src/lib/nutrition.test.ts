@@ -146,3 +146,12 @@ describe('stats', () => {
     expect(N.startOfWeek('2026-11-18')).toBe('2026-11-16');
   });
 });
+
+import { normalizeSupabaseUrl } from './store';
+describe('supabase url', () => {
+  it('strips /rest/v1/ and trailing slashes', () => {
+    expect(normalizeSupabaseUrl('https://abc.supabase.co/rest/v1/')).toBe('https://abc.supabase.co');
+    expect(normalizeSupabaseUrl(' https://abc.supabase.co/ ')).toBe('https://abc.supabase.co');
+    expect(normalizeSupabaseUrl('https://abc.supabase.co')).toBe('https://abc.supabase.co');
+  });
+});
