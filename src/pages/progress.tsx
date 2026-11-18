@@ -9,10 +9,53 @@ import { WEIGHT_NOTE, t4 } from '../data/content';
 import { Bar, Confirm, Empty, Icon, Modal, Page, Seg, errMsg, useFmt } from '../components/ui';
 
 export function ProgressHub() {
-  const { t } = useI18n();
-  const tiles = [{ to: '/progress/weight', i: 'scale', c: 't-lav', k: 'weight' }, { to: '/progress/nutrition', i: 'chart', c: 't-green', k: 'nutritionCharts' },
-    { to: '/progress/activity', i: 'walk', c: 't-peach', k: 'activity' }, { to: '/progress/report', i: 'book', c: 't-butter', k: 'report' }];
-  return <Page title={t('nav.progress')}><div className="grid2">{tiles.map(x => <Link key={x.to} to={x.to} className={`tile ${x.c}`}><span className="ti"><Icon n={x.i} /></span><b>{t('nav.' + x.k)}</b><span>{t('hub.' + x.k)}</span></Link>)}</div></Page>;
+  const { t, nf, df } = useI18n(); const { data, targets, profile } = useApp();
+  const today = isoDate(); const [week, setWeek] = useState(startOfWeek(today)); const [sel, setSel] = useState(today);
+  const days = Array.from({ length: 7 }, (_, i) => addDays(week, i));
+  const kcalOf = (d: string) => sumNutrients(data.diary_entries.filter(e => e.date === d).map(r => ({ kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat, fiber: r.fiber, sugar: r.sugar, addedSugar: r.added_sugar }))).totals;
+  const target = targets?.kcal ?? null; const selT = kcalOf(sel);
+  const cols = days.map(d => { const k = kcalOf(d).kcal; return { d, k, pct: target ? Math.round((k / target) * 100) : null }; });
+  const maxPct = Math.max(110, ...cols.map(c => c.pct ?? 0));
+  const walkWeek = days.map(d => data.activity_logs.filter(a => a.date === d).reduce((s, a) => s + Number(a.minutes), 0));
+  const walkMax = Math.max(1, ...walkWeek);
+  const weights = [...data.weight_logs].filter(w => w.weight_kg).sort((a, b) => a.date.localeCompare(b.date));
+  const lastW = weights.length ? Number(weights[weights.length - 1].weight_kg) : null;
+  const wSpark = weights.slice(-10).map(w => Number(w.weight_kg)); const wMin = Math.min(...wSpark), wMax = Math.max(...wSpark);
+  const waterSel = data.water_logs.filter(w => w.date === sel).reduce((a, w) => a + Number(w.ml), 0);
+  const glassGoal = Math.max(1, Math.round((targets?.waterMl ?? 2000) / 250)); const glasses = Math.floor(waterSel / 250);
+  const tiles = [{ to: '/progress/weight', i: '⚖️', k: 'weight' }, { to: '/progress/nutrition', i: '📊', k: 'nutritionCharts' }, { to: '/progress/activity', i: '🚶‍♀️', k: 'activity' }, { to: '/progress/report', i: '📝', k: 'report' }];
+  return <Page title={t('stats.title')}>
+    <section className="card">
+      <div className="row between"><b>{t('stats.calories')}</b><div className="row" style={{ gap: 6 }}>
+        <button className="navarrow" aria-label={t('common.prev')} onClick={() => setWeek(addDays(week, -7))}><Icon n="back" s={16} className="flip" /></button>
+        <button className="navarrow" aria-label={t('common.next')} disabled={addDays(week, 7) > today} onClick={() => setWeek(addDays(week, 7))}><Icon n="next" s={16} className="flip" /></button></div></div>
+      <div className="row between" style={{ alignItems: 'flex-end', marginTop: 6 }}>
+        <span className="statbig" data-testid="stat-kcal">{nf(selT.kcal)}<small>{t('unit.kcal')}</small></span>
+        <span className="small muted">{t('stats.target')}: <b style={{ color: 'var(--text)' }}>{target ? nf(target) : '—'}</b> {t('unit.kcal')}</span></div>
+      <p className="tiny muted" style={{ marginTop: 4 }}>{df(sel, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+      <div className="bars" role="list">{cols.map(c => <button key={c.d} role="listitem" className={`bcol ${c.d === sel ? 'on' : ''}`} disabled={c.d > today} onClick={() => setSel(c.d)} aria-label={`${df(c.d)}: ${nf(c.k)} kcal`}>
+        <span className="pct">{c.pct !== null && c.k > 0 ? `${c.pct}%` : ''}</span>
+        <div className="bstack"><div className="btarget" style={{ height: `${(100 / maxPct) * 100}%` }} />{c.k > 0 && <div className="bfill" style={{ height: `${Math.min(100, ((c.pct ?? 0) / maxPct) * 100)}%` }} />}</div>
+        <span className="dl">{df(c.d, { weekday: 'short' })}</span></button>)}</div>
+      <p className="tiny muted" style={{ marginTop: 8 }}>{t('stats.barsNote')}</p>
+    </section>
+    <div className="grid2">
+      <Link to="/progress/activity" className="metric"><div className="top"><span className="row" style={{ gap: 8 }}><span className="mi" style={{ background: '#dff5ea' }}>🏃‍♀️</span>{t('stats.exercise')}</span></div>
+        <div className="spark">{walkWeek.map((m, i) => <i key={i} style={{ height: `${(m / walkMax) * 100}%`, opacity: days[i] === sel ? 1 : .55 }} />)}</div>
+        <span className="val">{nf(walkWeek.reduce((a, b) => a + b, 0) / 60, 1)}<small>{t('stats.hoursWeek')}</small></span></Link>
+      <Link to="/food/sugar" className="metric"><div className="top"><span className="row" style={{ gap: 8 }}><span className="mi" style={{ background: '#ffe3e3' }}>🍬</span>{t('n.addedSugar')}</span></div>
+        <div className="bar" style={{ marginTop: 8 }}><i style={{ width: `${targets?.addedSugarMaxG ? Math.min(100, selT.addedSugar / targets.addedSugarMaxG * 100) : 0}%`, background: 'var(--c-sugar)' }} /></div>
+        <span className="val">{nf(selT.addedSugar, 1)}<small>/ {targets?.addedSugarMaxG ?? '—'} g</small></span></Link>
+      <Link to="/progress/weight" className="metric"><div className="top"><span className="row" style={{ gap: 8 }}><span className="mi" style={{ background: '#fdeadb' }}>⚖️</span>{t('nav.weight')}</span></div>
+        {profile?.track_weight === false ? <span className="small muted">{t('weight.pause')}</span> : <>
+        {wSpark.length >= 2 ? <div className="spark">{wSpark.map((w, i) => <i key={i} style={{ height: `${wMax > wMin ? 25 + ((w - wMin) / (wMax - wMin)) * 75 : 60}%`, background: '#f2a35e' }} />)}</div> : <div className="spark" />}
+        <span className="val">{lastW !== null ? nf(lastW, 1) : '—'}<small>kg</small></span></>}</Link>
+      <Link to="/wellness/water" className="metric"><div className="top"><span className="row" style={{ gap: 8 }}><span className="mi" style={{ background: '#dcefff' }}>💧</span>{t('nav.water')}</span></div>
+        <div className="drops" aria-hidden="true">{Array.from({ length: Math.min(glassGoal, 10) }, (_, i) => <span key={i} className={i < glasses ? 'on' : ''}>💧</span>)}</div>
+        <span className="val">{glasses}<small>/ {glassGoal} {t('home.glass')}</small></span></Link>
+    </div>
+    <div className="grid2">{tiles.map(x => <Link key={x.to} to={x.to} className="tile t-green"><span className="ti">{x.i}</span><b>{t('nav.' + x.k)}</b><span>{t('hub.' + x.k)}</span></Link>)}</div>
+  </Page>;
 }
 
 async function resizeImage(file: File, max = 1080): Promise<Blob> {

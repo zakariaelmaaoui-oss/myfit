@@ -368,3 +368,13 @@ S('home.topFruits', 'Top fruits', 'Fruits du moment', 'فواكه مختارة',
 S('home.energySplit', 'Today’s energy split', 'Répartition de l’énergie', 'توزيع طاقة اليوم');
 S('auth.heroTitle', 'Eat better, live healthy', 'Mangez mieux, vivez sainement', 'كُلي أفضل، عيشي بصحة', 'كولي مزيان، عيشي بصحة');
 S('auth.heroText', 'Fresh food, simple habits and kind support every day.', 'Des aliments frais, des habitudes simples et un soutien bienveillant chaque jour.', 'طعام طازج، عادات بسيطة ودعم لطيف كل يوم.', 'ماكلة طرية، عادات ساهلة ودعم كل نهار.');
+S('home.greetM', 'Good morning!', 'Bonjour !', 'صباح الخير!', 'صباح الخير!'); S('home.greetA', 'Good afternoon!', 'Bon après-midi !', 'مساء الخير!', 'مساء الخير!'); S('home.greetE', 'Good evening!', 'Bonsoir !', 'مساء الخير!', 'مساء النور!');
+S('home.dailyIntake', 'Daily intake', 'Apports du jour', 'المدخول اليومي', 'الماكلة ديال النهار');
+S('home.weeklyProgress', 'Your Weekly Progress', 'Votre progression de la semaine', 'تقدمك الأسبوعي', 'التقدم ديالك فالسيمانة');
+S('home.daysLogged', 'Meals recorded on {n} of 7 days this week', 'Repas notés {n} jours sur 7 cette semaine', 'وجبات مسجلة في {n} من 7 أيام هذا الأسبوع', 'سجلتي الماكلة {n} من 7 أيام هاد السيمانة');
+S('home.days', 'days', 'jours', 'أيام', 'أيام'); S('home.stepsTitle', 'Steps to walk', 'Pas de marche', 'خطوات المشي', 'الخطوات');
+S('home.drinkWater', 'Drink water', 'Boire de l’eau', 'شرب الماء', 'شرب الما'); S('home.glass', 'glass', 'verres', 'كؤوس', 'كيسان');
+S('stats.title', 'Statistic', 'Statistiques', 'الإحصائيات', 'الإحصائيات'); S('stats.target', 'Target', 'Objectif', 'الهدف', 'الهدف');
+S('stats.barsNote', 'Bars show recorded calories as a % of your estimated target. Tap a day to see it.', 'Les barres montrent les calories notées en % de votre objectif estimé. Touchez un jour.', 'الأعمدة تبين السعرات المسجلة كنسبة من هدفك التقديري. اضغطي على يوم لعرضه.', 'الأعمدة كتبين الكالوري المسجلة بالنسبة للهدف ديالك. ضغطي على نهار باش تشوفيه.');
+S('stats.exercise', 'Exercise', 'Activité', 'النشاط', 'الحركة'); S('stats.hoursWeek', 'hours this week', 'heures cette semaine', 'ساعات هذا الأسبوع', 'سوايع هاد السيمانة');
+S('stats.calories', 'Calories', 'Calories', 'السعرات', 'الكالوري');
