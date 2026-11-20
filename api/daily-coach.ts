@@ -1,14 +1,14 @@
 // GET /api/daily-coach — run once a day by Vercel Cron (see vercel.json).
-// Sends each opted-in user a short personalised push message written by Claude from yesterday's data.
-// Requires: ANTHROPIC_API_KEY, SUPABASE_SERVICE_ROLE_KEY, VITE_SUPABASE_URL, VAPID_PUBLIC_KEY (or VITE_VAPID_PUBLIC_KEY),
+// Sends each opted-in user a short personalised push message written by the AI (Groq) from yesterday's data.
+// Requires: GROQ_API_KEY (optional GROQ_MODEL), SUPABASE_SERVICE_ROLE_KEY, VITE_SUPABASE_URL, VAPID_PUBLIC_KEY (or VITE_VAPID_PUBLIC_KEY),
 // VAPID_PRIVATE_KEY, CRON_SECRET (Vercel sends it as "Authorization: Bearer <CRON_SECRET>").
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { createClient } from '@supabase/supabase-js';
 import webpush from 'web-push';
 
 export const config = { maxDuration: 60 };
-const MODEL = 'claude-opus-5-5';
+const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 
 function send(res: ServerResponse, status: number, body: unknown) { res.statusCode = status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(body)); }
 const isoDay = (d: Date) => d.toISOString().slice(0, 10);
@@ -28,7 +28,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   if (!url || !service || !pub || !priv) return send(res, 503, { error: 'not_configured' });
   webpush.setVapidDetails('mailto:noreply@myfit.app', pub, priv);
   const db = createClient(url, service, { auth: { persistSession: false } });
-  const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
+  const ai = process.env.GROQ_API_KEY ? new Groq({ apiKey: process.env.GROQ_API_KEY }) : null;
 
   const { data: prefs } = await db.from('user_preferences').select('id,coach_consent').eq('coach_push_enabled', true);
   const users = (prefs ?? []).map(p => ({ id: p.id as string, consent: !!p.coach_consent }));
@@ -41,7 +41,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const { data: profile } = await db.from('profiles').select('name,language,goal,age,pregnant,breastfeeding,medical_supervision,eating_disorder_history,walk_goal_min').eq('id', u.id).maybeSingle();
     const lang = (profile?.language as string) || 'en';
     let body = FALLBACK[lang] ?? FALLBACK.en;
-    if (anthropic && u.consent) {
+    if (ai && u.consent) {
       const [{ data: diary }, { data: water }, { data: acts }, { data: goal }] = await Promise.all([
         db.from('diary_entries').select('meal,kcal,added_sugar').eq('user_id', u.id).eq('date', yesterday),
         db.from('water_logs').select('ml').eq('user_id', u.id).eq('date', yesterday),
@@ -56,14 +56,16 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         targets: { kcal: goal?.kcal ?? null, water_ml: goal?.water_ml ?? null, walk_min: profile?.walk_goal_min ?? 30 },
       };
       try {
-        const msg = await anthropic.beta.messages.create({
-          model: MODEL, max_tokens: 1024, betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default', output_config: { effort: 'low' },
-          system: `You write one short morning push notification for the MyFit nutrition app. Language: ${lang === 'dar' ? 'Moroccan Darija in Arabic script' : lang === 'ar' ? 'Arabic' : lang === 'fr' ? 'French' : 'English'}. Max 160 characters, warm, specific to the data, one concrete tip for today (food, water or walking). No guilt, no shaming, never suggest eating less to compensate, skipping meals or burning calories off. If individual_guidance_needed is true, do not mention weight loss or calorie targets. If no meals were logged, just encourage gently. Output only the message text.`,
-          messages: [{ role: 'user', content: JSON.stringify(facts) }],
+        const msg = await ai.chat.completions.create({
+          model: MODEL, max_completion_tokens: 200, temperature: 0.6,
+          messages: [
+            { role: 'system', content: `You write one short morning push notification for the MyFit nutrition app. Language: ${lang === 'dar' ? 'Moroccan Darija in Arabic script' : lang === 'ar' ? 'Arabic' : lang === 'fr' ? 'French' : 'English'}. Max 160 characters, warm, specific to the data, one concrete tip for today (food, water or walking). No guilt, no shaming, never suggest eating less to compensate, skipping meals or burning calories off. If individual_guidance_needed is true, do not mention weight loss or calorie targets. If no meals were logged, just encourage gently. Output only the message text, without quotes.` },
+            { role: 'user', content: JSON.stringify(facts) },
+          ],
         });
-        const t = msg.stop_reason === 'refusal' ? '' : msg.content.map(b => (b.type === 'text' ? b.text : '')).join('').trim();
+        const t = (msg.choices[0]?.message?.content ?? '').trim().replace(/^["“]|["”]$/g, '');
         if (t) body = t.slice(0, 220);
-      } catch (e) { console.error('daily-coach claude', e instanceof Anthropic.APIError ? e.status : e); }
+      } catch (e) { console.error('daily-coach ai', e instanceof Groq.APIError ? e.status : e); }
     }
     const payload = JSON.stringify({ title: 'MyFit', body, url: '/coach' });
     for (const s of subs) {

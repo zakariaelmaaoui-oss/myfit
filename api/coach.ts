@@ -1,13 +1,13 @@
-// POST /api/coach — MyFit Coach chat (Claude), streamed as Server-Sent Events.
-// Requires: ANTHROPIC_API_KEY, VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (Vercel env vars).
+// POST /api/coach — MyFit Coach chat (Groq, Llama model), streamed as Server-Sent Events.
+// Requires: GROQ_API_KEY (optional GROQ_MODEL), VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY (Vercel env vars).
 // The caller must send its Supabase access token; all reads/writes run as that user (RLS applies).
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import Anthropic from '@anthropic-ai/sdk';
+import Groq from 'groq-sdk';
 import { createClient } from '@supabase/supabase-js';
 
 export const config = { maxDuration: 60 };
 
-const MODEL = 'claude-opus-5-5';
+const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
 const DAILY_LIMIT = 40;
 const LANG_NAME: Record<string, string> = { en: 'English', fr: 'French', ar: 'Modern Standard Arabic', dar: 'Moroccan Darija (write it the way the user writes it: Arabic script or Latin letters/numbers like "3" and "7")' };
 
@@ -46,7 +46,7 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   const sb = createClient(url, anon, { global: { headers: { Authorization: `Bearer ${token}` } }, auth: { persistSession: false } });
   const { data: auth } = await sb.auth.getUser(token);
   const user = auth?.user; if (!user) return send(res, 401, { error: 'not_signed_in' });
-  if (!process.env.ANTHROPIC_API_KEY) return send(res, 503, { error: 'coach_not_configured' });
+  if (!process.env.GROQ_API_KEY) return send(res, 503, { error: 'coach_not_configured' });
 
   let body: any; try { body = await readBody(req); } catch { return send(res, 400, { error: 'bad_json' }); }
   const message = typeof body?.message === 'string' ? body.message.trim() : '';
@@ -62,7 +62,7 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   if ((count ?? 0) >= DAILY_LIMIT) return send(res, 429, { error: 'daily_limit', limit: DAILY_LIMIT });
 
   const { data: hist } = await sb.from('ai_messages').select('role,content').order('created_at', { ascending: false }).limit(20);
-  const history: Anthropic.Beta.BetaMessageParam[] = (hist ?? []).reverse().map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
+  const history: { role: 'user' | 'assistant'; content: string }[] = (hist ?? []).reverse().map(m => ({ role: m.role as 'user' | 'assistant', content: m.content }));
   while (history.length && history[0].role !== 'user') history.shift(); // the API needs a user turn first
   const { error: insErr } = await sb.from('ai_messages').insert({ user_id: user.id, role: 'user', content: message });
   if (insErr) return send(res, 500, { error: 'save_failed' });
@@ -71,36 +71,29 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8'); res.setHeader('Cache-Control', 'no-cache, no-transform'); res.setHeader('X-Accel-Buffering', 'no');
   const emit = (o: unknown) => res.write(`data: ${JSON.stringify(o)}\n\n`);
 
-  const client = new Anthropic();
+  const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   let text = '';
   try {
-    const stream = client.beta.messages.stream({
+    const stream = await groq.chat.completions.create({
       model: MODEL,
-      max_tokens: 4096,
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      output_config: { effort: 'low' },
-      system: [
-        { type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } },
-        { type: 'text', text: `Reply in ${LANG_NAME[lang]} unless the user clearly writes in another language; then reply in that language.\nToday: ${new Date().toISOString().slice(0, 10)}.\nUser data from the app (JSON):\n${context}` },
+      stream: true,
+      max_completion_tokens: 1024,
+      temperature: 0.5,
+      messages: [
+        { role: 'system', content: `${SYSTEM}\n\nReply in ${LANG_NAME[lang]} unless the user clearly writes in another language; then reply in that language.\nToday: ${new Date().toISOString().slice(0, 10)}.\nUser data from the app (JSON):\n${context}` },
+        ...history,
+        { role: 'user', content: message },
       ],
-      messages: [...history, { role: 'user', content: message }],
     });
-    for await (const ev of stream) {
-      if (ev.type === 'content_block_delta' && ev.delta.type === 'text_delta') { text += ev.delta.text; emit({ t: ev.delta.text }); }
-    }
-    const final = await stream.finalMessage();
-    if (final.stop_reason === 'refusal' && !text.trim()) {
-      text = lang === 'fr' ? 'Je ne peux pas répondre à cette question. Pour un avis médical, parlez à un professionnel de santé.'
-        : lang === 'ar' || lang === 'dar' ? 'ما نقدرش نجاوب على هاد السؤال. للاستشارة الطبية، تواصلي مع مختص صحي.'
-        : 'I can’t help with that question. For medical advice, please talk to a healthcare professional.';
-      emit({ t: text });
+    for await (const chunk of stream) {
+      const d = chunk.choices[0]?.delta?.content;
+      if (d) { text += d; emit({ t: d }); }
     }
     if (text.trim()) await sb.from('ai_messages').insert({ user_id: user.id, role: 'assistant', content: text.slice(0, 8000) });
     emit({ done: true });
   } catch (e) {
-    console.error('coach error', e instanceof Anthropic.APIError ? `${e.status} ${e.message}` : e);
-    const code = e instanceof Anthropic.RateLimitError ? 'busy' : e instanceof Anthropic.AuthenticationError ? 'coach_not_configured' : 'coach_error';
+    console.error('coach error', e instanceof Groq.APIError ? `${e.status} ${e.message}` : e);
+    const code = e instanceof Groq.RateLimitError ? 'busy' : e instanceof Groq.AuthenticationError ? 'coach_not_configured' : 'coach_error';
     emit({ error: code });
   }
   res.end();

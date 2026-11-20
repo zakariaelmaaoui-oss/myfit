@@ -1,7 +1,7 @@
 # MyFit — Eat Better. Feel Better. Live Better.
 
 A mobile-first nutrition and healthy-lifestyle web app (installable PWA) in **English, French, Arabic (RTL) and Moroccan Darija**.
-Food values, calculations, recipes, plans and reports come from verified food data, standard formulas, stored content and what the user enters — no AI. The only AI feature is the optional **MyFit Coach** (Claude, by Anthropic): a chat to ask questions about food and habits, plus a daily coaching message on the phone. Users must opt in; they can turn it off and delete the conversation at any time.
+Food values, calculations, recipes, plans and reports come from verified food data, standard formulas, stored content and what the user enters — no AI. The only AI feature is the optional **MyFit Coach** (Llama model through the free Groq API): a chat to ask questions about food and habits, plus a daily coaching message on the phone. Users must opt in; they can turn it off and delete the conversation at any time.
 
 ## Features
 
@@ -18,7 +18,7 @@ Food values, calculations, recipes, plans and reports come from verified food da
 | Sugar tracker | Total, added and natural sugar; weekly and monthly views; list of high-added-sugar products; education; WHO 10 % / 5 % / custom guidance; gentle alerts |
 | Barcode | Open Food Facts lookup (optional), camera scanning where the browser supports BarcodeDetector, otherwise manual entry; marked "not verified" |
 | Emotional wellness | Hunger check-in (physical / emotional / craving), private journal, craving journal with weekly patterns, breathing exercises, 3-minute guided stress exercise, relaxation, tips, coping ideas. Suggests professional support after repeated loss-of-control or distress entries |
-| MyFit Coach (AI) | Chat with Claude (`claude-opus-5-5`, low effort, server-side refusal fallback) through `api/coach.ts`. It sees a summary of the user's own data (today's meals, targets, water, walking; never free-text health notes), follows safety rules (no diagnosis, no extreme diets, no guilt), keeps 40 questions/day per user, and saves the conversation privately. A daily push message (`api/daily-coach.ts`, Vercel Cron 08:00 UTC) gives one tip based on yesterday |
+| MyFit Coach (AI) | Chat through `api/coach.ts` using Groq (`llama-3.3-70b-versatile` by default; change with `GROQ_MODEL`). It sees a summary of the user's own data (today's meals, targets, water, walking; never free-text health notes), follows safety rules (no diagnosis, no extreme diets, no guilt), keeps 40 questions/day per user, and saves the conversation privately. A daily push message (`api/daily-coach.ts`, Vercel Cron 08:00 UTC) gives one tip based on yesterday |
 | Steps & calories burned | During a walk, the phone's motion sensor counts steps live (while MyFit is open); distance = steps × stride (height × 0.413/0.415); calories = MET (from walking speed, Compendium of Physical Activities) × weight × time. Without the sensor, MET 3.5 is assumed |
 | Water / walking | 150 / 250 / 500 ml + custom amounts, adjustable goal, history. Walking timer (keeps running across pages), manual minutes and steps, goal, history |
 | Healthy drinks | 6 recipes with calculated values, and a clear note: no "detox" claims |
@@ -57,7 +57,7 @@ With no Supabase keys, the app runs in **device mode**: accounts (PBKDF2-hashed 
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
    - `VITE_ENABLE_OPENFOODFACTS` = `true` (optional)
-   - MyFit Coach: `ANTHROPIC_API_KEY` (from console.anthropic.com; usage is billed by Anthropic)
+   - MyFit Coach: `GROQ_API_KEY` (free key from console.groq.com; free plan has daily limits). Optional `GROQ_MODEL`.
    - Daily phone message: `SUPABASE_SERVICE_ROLE_KEY` (Supabase → API keys → secret), `VITE_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
      (generate with `npx web-push generate-vapid-keys`), and `CRON_SECRET` (any long random string). Server-only keys must **not** start with `VITE_`.
 4. Deploy, then put the deployment URL into Supabase (step 3 above).

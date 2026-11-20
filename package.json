@@ -13,8 +13,8 @@
     "seed": "vite-node scripts/gen-seed.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.12.0",
     "@supabase/supabase-js": "^2.46.1",
+    "groq-sdk": "^1.6.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
