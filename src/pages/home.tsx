@@ -42,19 +42,27 @@ export function Home() {
     {mode === 'local' && <div className="banner small">{t('auth.localModeShort')} <Link to="/profile/privacy">{t('common.learnMore')}</Link></div>}
     {targets && targets.restrictions.length > 0 && <div className="card warn small">{t('calc.restricted.' + targets.restrictions[0])}</div>}
 
-    <Link to="/progress" className="weekcard" aria-label={t('home.weeklyProgress')}>
-      <div className="grow"><span className="pill"><i>⚡</i>{t('home.dailyIntake')}</span><h2>{t('home.weeklyProgress')}</h2>
-        <p className="tiny" style={{ marginTop: 6, opacity: .8 }}>{t('home.daysLogged', { n: loggedDays })}</p></div>
-      <Gauge value={loggedDays} max={7} size={118} ticks={24}><b style={{ fontSize: '1.5rem' }}>{loggedDays}</b><span className="tiny muted">/ 7 {t('home.days')}</span></Gauge>
-    </Link>
-
-    <div className="grid2">
-      <Link to="/wellness/walk" className="metric"><div className="top"><span>{t('home.stepsTitle')}</span><span className="mi" style={{ background: 'var(--accent-soft)' }}>👣</span></div>
-        {steps > 0 ? <span className="val">{nf(steps)}<small>{t('walk.stepsShort')}</small></span> : <span className="val">{nf(walkMin)}<small>{t('unit.min')} / {profile?.walk_goal_min ?? 30}</small></span>}
-        <span className="tiny muted" data-testid="home-burned">🔥 {nf(burned)} kcal {t('home.burned')}</span></Link>
-      <Link to="/wellness/water" className="metric"><div className="top"><span>{t('home.drinkWater')}</span><span className="mi" style={{ background: 'var(--sky-soft)' }}>💧</span></div>
-        <span className="val">{glasses}<small>{t('home.glass')} · <span data-testid="home-water" dir="ltr">{nf(water / 1000, 2)} L</span></small></span></Link>
+    <div className="activitygrid">
+      <Link to="/progress" className="card center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, textDecoration: 'none', color: 'inherit' }} data-testid="home-goal">
+        <div className="row between" style={{ width: '100%' }}><b className="small">{t('home.todayGoal')}</b><span className="tiny muted">⋮</span></div>
+        <span className="tiny muted" style={{ alignSelf: 'flex-start' }}>{t('stats.dailyTargetSub')}</span>
+        <Gauge value={tot.totals.kcal} max={targets?.kcal ?? 0} size={140}><b>{targets?.kcal ? `${Math.round((tot.totals.kcal / targets.kcal) * 100)}%` : '—'}</b><span className="tiny muted">{t('stats.completed')}</span></Gauge>
+        <span className="small"><b className="num">{nf(tot.totals.kcal)}</b> / {targets?.kcal ? nf(targets.kcal) : '—'} kcal</span>
+      </Link>
+      <div className="stack" style={{ gap: 12 }}>
+        <Link to="/wellness/walk" className="statcard" style={{ textDecoration: 'none', color: 'inherit' }}><div className="top"><span className="ico">👣</span><span className="trend">🔥 {nf(burned)}</span></div>
+          {steps > 0 ? <span className="v">{nf(steps)}<small>{t('walk.stepsShort')}</small></span> : <span className="v">{nf(walkMin)}<small>/ {profile?.walk_goal_min ?? 30} {t('unit.min')}</small></span>}
+          <span className="tiny muted" data-testid="home-burned">{t('home.stepsTitle')} · {nf(burned)} kcal {t('home.burned')}</span></Link>
+        <Link to="/wellness/water" className="statcard" style={{ textDecoration: 'none', color: 'inherit' }}><div className="top"><span className="ico">💧</span></div>
+          <span className="v">{glasses}<small>{t('home.glass')}</small></span><span className="tiny muted">{t('home.drinkWater')} · <span data-testid="home-water" dir="ltr">{nf(water / 1000, 2)} L</span></span></Link>
+      </div>
     </div>
+
+    <Link to="/progress" className="weekstrip" aria-label={t('home.weeklyProgress')}>
+      <div className="grow"><b>{t('home.weeklyProgress')}</b><div className="tiny muted">{t('home.daysLogged', { n: loggedDays })}</div>
+        <div className="weekdots">{thisWeek.map(d => <span key={d} className={`${data.diary_entries.some(e => e.date === d) ? 'on' : ''} ${d === today ? 'today' : ''}`}>{df(d, { weekday: 'narrow' })}</span>)}</div></div>
+      <span className="coachgo"><Icon n="next" s={18} className="flip" /></span>
+    </Link>
 
     <Link to="/coach" className="coachcard" data-testid="coach-card">
       <span className="coachavatar">✨</span>
