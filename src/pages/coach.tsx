@@ -64,7 +64,7 @@ export function Coach() {
         buf += dec.decode(value, { stream: true });
         let i; while ((i = buf.indexOf('\n\n')) >= 0) {
           const line = buf.slice(0, i).replace(/^data: /, ''); buf = buf.slice(i + 2);
-          try { const ev = JSON.parse(line); if (ev.t) { answer += ev.t; setPending({ q, a: answer }); } if (ev.error) throw new Error(t('coach.err.' + ev.error)); } catch (e) { if (e instanceof Error && !(e instanceof SyntaxError)) throw e; }
+          try { const ev = JSON.parse(line); if (ev.t) { answer += ev.t; setPending({ q, a: answer }); } if (ev.error) throw new Error(t('coach.err.' + ev.error) + (ev.detail ? ` (${ev.detail})` : '')); } catch (e) { if (e instanceof Error && !(e instanceof SyntaxError)) throw e; }
         }
       }
       await reload();

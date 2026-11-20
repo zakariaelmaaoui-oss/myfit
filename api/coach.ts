@@ -7,7 +7,20 @@ import { createClient } from '@supabase/supabase-js';
 
 export const config = { maxDuration: 60 };
 
-const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const PREFERRED = [process.env.GROQ_MODEL, 'llama-3.3-70b-versatile', 'openai/gpt-oss-120b', 'meta-llama/llama-4-maverick-17b-128e-instruct', 'meta-llama/llama-4-scout-17b-16e-instruct', 'openai/gpt-oss-20b', 'llama-3.1-8b-instant'].filter(Boolean) as string[];
+let cachedModel: string | null = null;
+/** Pick a chat model this Groq account can use (models get renamed/retired over time). */
+async function pickModel(groq: Groq, exclude: string[] = []): Promise<string> {
+  try {
+    const list = await groq.models.list();
+    const ids = new Set(list.data.filter((m: any) => m.active !== false).map(m => m.id));
+    const hit = PREFERRED.find(id => ids.has(id) && !exclude.includes(id))
+      ?? [...ids].find(id => /llama|gpt-oss|qwen|gemma|mistral/i.test(id) && !/guard|whisper|tts|playai|embed/i.test(id) && !exclude.includes(id));
+    if (hit) return hit;
+  } catch (e) { console.error('models.list', e instanceof Groq.APIError ? e.status : e); }
+  return PREFERRED.find(id => !exclude.includes(id)) ?? 'llama-3.1-8b-instant';
+}
+const isModelError = (e: unknown) => e instanceof Groq.NotFoundError || (e instanceof Groq.BadRequestError && /model/i.test(e.message));
 const DAILY_LIMIT = 40;
 const LANG_NAME: Record<string, string> = { en: 'English', fr: 'French', ar: 'Modern Standard Arabic', dar: 'Moroccan Darija (write it the way the user writes it: Arabic script or Latin letters/numbers like "3" and "7")' };
 
@@ -72,29 +85,34 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   const emit = (o: unknown) => res.write(`data: ${JSON.stringify(o)}\n\n`);
 
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  const chat = [
+    { role: 'system' as const, content: `${SYSTEM}\n\nReply in ${LANG_NAME[lang]} unless the user clearly writes in another language; then reply in that language.\nToday: ${new Date().toISOString().slice(0, 10)}.\nUser data from the app (JSON):\n${context}` },
+    ...history,
+    { role: 'user' as const, content: message },
+  ];
   let text = '';
-  try {
-    const stream = await groq.chat.completions.create({
-      model: MODEL,
-      stream: true,
-      max_completion_tokens: 1024,
-      temperature: 0.5,
-      messages: [
-        { role: 'system', content: `${SYSTEM}\n\nReply in ${LANG_NAME[lang]} unless the user clearly writes in another language; then reply in that language.\nToday: ${new Date().toISOString().slice(0, 10)}.\nUser data from the app (JSON):\n${context}` },
-        ...history,
-        { role: 'user', content: message },
-      ],
-    });
-    for await (const chunk of stream) {
-      const d = chunk.choices[0]?.delta?.content;
-      if (d) { text += d; emit({ t: d }); }
+  const tried: string[] = [];
+  let model = cachedModel ?? PREFERRED[0];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    tried.push(model);
+    try {
+      const stream = await groq.chat.completions.create({ model, stream: true, max_completion_tokens: 1024, temperature: 0.5, messages: chat });
+      for await (const chunk of stream) {
+        const d = chunk.choices[0]?.delta?.content;
+        if (d) { text += d; emit({ t: d }); }
+      }
+      cachedModel = model;
+      if (text.trim()) await sb.from('ai_messages').insert({ user_id: user.id, role: 'assistant', content: text.slice(0, 8000) });
+      emit({ done: true });
+      break;
+    } catch (e) {
+      const detail = e instanceof Groq.APIError ? `${e.status ?? ''} ${e.message}`.trim() : String(e);
+      console.error('coach error', model, detail);
+      if (!text && isModelError(e) && attempt < 2) { cachedModel = null; model = await pickModel(groq, tried); continue; }
+      const code = e instanceof Groq.RateLimitError ? 'busy' : e instanceof Groq.AuthenticationError ? 'coach_not_configured' : 'coach_error';
+      emit({ error: code, detail: `${model}: ${detail}`.slice(0, 300) });
+      break;
     }
-    if (text.trim()) await sb.from('ai_messages').insert({ user_id: user.id, role: 'assistant', content: text.slice(0, 8000) });
-    emit({ done: true });
-  } catch (e) {
-    console.error('coach error', e instanceof Groq.APIError ? `${e.status} ${e.message}` : e);
-    const code = e instanceof Groq.RateLimitError ? 'busy' : e instanceof Groq.AuthenticationError ? 'coach_not_configured' : 'coach_error';
-    emit({ error: code });
   }
   res.end();
 }

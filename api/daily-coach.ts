@@ -9,6 +9,7 @@ import webpush from 'web-push';
 
 export const config = { maxDuration: 60 };
 const MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+const BACKUP = ['openai/gpt-oss-120b', 'llama-3.1-8b-instant'];
 
 function send(res: ServerResponse, status: number, body: unknown) { res.statusCode = status; res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(body)); }
 const isoDay = (d: Date) => d.toISOString().slice(0, 10);
@@ -56,13 +57,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         targets: { kcal: goal?.kcal ?? null, water_ml: goal?.water_ml ?? null, walk_min: profile?.walk_goal_min ?? 30 },
       };
       try {
-        const msg = await ai.chat.completions.create({
-          model: MODEL, max_completion_tokens: 200, temperature: 0.6,
+        const req = (model: string) => ai.chat.completions.create({
+          model, max_completion_tokens: 200, temperature: 0.6,
           messages: [
             { role: 'system', content: `You write one short morning push notification for the MyFit nutrition app. Language: ${lang === 'dar' ? 'Moroccan Darija in Arabic script' : lang === 'ar' ? 'Arabic' : lang === 'fr' ? 'French' : 'English'}. Max 160 characters, warm, specific to the data, one concrete tip for today (food, water or walking). No guilt, no shaming, never suggest eating less to compensate, skipping meals or burning calories off. If individual_guidance_needed is true, do not mention weight loss or calorie targets. If no meals were logged, just encourage gently. Output only the message text, without quotes.` },
             { role: 'user', content: JSON.stringify(facts) },
           ],
         });
+        let msg; try { msg = await req(MODEL); } catch (e) { if (e instanceof Groq.NotFoundError || e instanceof Groq.BadRequestError) msg = await req(BACKUP[0]).catch(() => req(BACKUP[1])); else throw e; }
         const t = (msg.choices[0]?.message?.content ?? '').trim().replace(/^["“]|["”]$/g, '');
         if (t) body = t.slice(0, 220);
       } catch (e) { console.error('daily-coach ai', e instanceof Groq.APIError ? e.status : e); }
