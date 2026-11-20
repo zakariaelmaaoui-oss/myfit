@@ -1,11 +1,12 @@
 {
-  "rewrites": [{ "source": "/((?!assets/|sw.js|manifest.webmanifest|icons/).*)", "destination": "/index.html" }],
+  "rewrites": [{ "source": "/((?!api/|assets/|sw.js|manifest.webmanifest|icons/).*)", "destination": "/index.html" }],
+  "crons": [{ "path": "/api/daily-coach", "schedule": "0 8 * * *" }],
   "headers": [
     { "source": "/(.*)", "headers": [
       { "key": "X-Content-Type-Options", "value": "nosniff" },
       { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
       { "key": "X-Frame-Options", "value": "DENY" },
-      { "key": "Permissions-Policy", "value": "camera=(self), geolocation=()" }
+      { "key": "Permissions-Policy", "value": "camera=(self), accelerometer=(self), gyroscope=(self), geolocation=()" }
     ]},
     { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
   ]

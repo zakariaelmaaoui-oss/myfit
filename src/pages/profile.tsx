@@ -8,6 +8,7 @@ import { ESTIMATE_NOTE, REMINDER_TEXT, t4 } from '../data/content';
 import { ProfileFields, validateProfile } from '../components/ProfileFields';
 import { Icon, Modal, Page, Seg, errMsg, useFmt } from '../components/ui';
 import { notify, requestNotificationPermission } from '../components/Notifier';
+import { disablePush, enablePush, isIos, isStandalone, pushSupported } from '../lib/push';
 
 export function ProfileHub() {
   const { t } = useI18n(); const { profile, user, mode } = useApp(); const nav = useNavigate();
@@ -84,6 +85,7 @@ export function Notifications() {
       <p className="tiny muted">{t('notif.openNote')}</p>
       <button className="btn sm" style={{ alignSelf: 'flex-start' }} onClick={() => { notify(t('notif.testTitle'), t4(REMINDER_TEXT.water, lang)); toast(t4(REMINDER_TEXT.water, lang)); }}>{t('notif.test')}</button>
     </section>
+    <CoachPush />
     <section className="card stack"><h2>{t('notif.reminders')}</h2>{prefs.reminders.map((r, i) => <div className="row" key={i}>
       <input type="checkbox" checked={r.enabled} onChange={e => setR(i, { enabled: e.target.checked })} aria-label={t('notif.type.' + r.type)} />
       <span className="grow small">{t('notif.type.' + r.type)}</span>
@@ -104,7 +106,7 @@ export function Notifications() {
 }
 
 export function Privacy() {
-  const { t } = useI18n(); const { data, user, profile, saveProfile, mode } = useApp(); const nav = useNavigate();
+  const { t } = useI18n(); const { data, user, profile, saveProfile, mode, prefs, savePrefs, removeWhere } = useApp(); const nav = useNavigate();
   const [del, setDel] = useState(false); const [confirm, setConfirm] = useState(''); const [err, setErr] = useState('');
   const exportData = () => {
     const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), app: 'MyFit', user: { id: user?.id, email: user?.email }, data }, null, 2)], { type: 'application/json' });
@@ -119,6 +121,9 @@ export function Privacy() {
       <label className="check"><input type="checkbox" disabled={!profile?.consent_sensitive} checked={!!profile?.enable_period} onChange={e => saveProfile({ enable_period: e.target.checked })} />{t('privacy.period')}</label>
       <label className="check"><input type="checkbox" checked={profile?.track_weight !== false} onChange={e => saveProfile({ track_weight: e.target.checked })} />{t('p.trackWeight')}</label>
       <p className="tiny muted">{t('privacy.withdraw')}</p>{profile?.consent_at && <p className="tiny muted">{t('privacy.consentAt', { d: new Date(profile.consent_at).toLocaleDateString() })}</p>}</section>
+    <section className="card stack"><h2>{t('coach.title')}</h2><p className="small muted">{t('coach.privacyShort')}</p>
+      {prefs.coach_consent ? <button className="btn" onClick={async () => { await removeWhere('ai_messages', 'role', 'user'); await removeWhere('ai_messages', 'role', 'assistant'); await savePrefs({ coach_consent: false, coach_consent_at: null, coach_push_enabled: false } as any); }}>{t('coach.revoke')}</button>
+        : <p className="small">{t('coach.notEnabled')}</p>}</section>
     <section className="card stack"><h2>{t('privacy.export')}</h2><p className="small muted">{t('privacy.exportInfo', { n: count })}</p><button className="btn" onClick={exportData}><Icon n="download" s={18} />{t('privacy.exportBtn')}</button></section>
     <section className="card stack"><h2>{t('privacy.delete')}</h2><p className="small muted">{t('privacy.deleteInfo')}</p><button className="btn danger" onClick={() => setDel(true)}><Icon n="trash" s={18} />{t('privacy.deleteBtn')}</button></section>
     <Modal open={del} onClose={() => setDel(false)} title={t('privacy.delete')}><p className="small">{t('privacy.deleteConfirm')}</p>
@@ -142,3 +147,26 @@ export function Settings() {
   </Page>;
 }
 export function applyTheme(v?: string) { const r = document.documentElement; if (!v || v === 'system') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', v); }
+
+function CoachPush() {
+  const { t } = useI18n(); const { prefs, savePrefs, insert, removeWhere, mode, toast } = useApp(); const [busy, setBusy] = useState(false); const [msg, setMsg] = useState('');
+  const toggle = async (on: boolean) => {
+    setBusy(true); setMsg('');
+    try {
+      if (on) {
+        const r = await enablePush(insert);
+        if (r !== 'ok') { setMsg(t('push.' + r)); return; }
+        await savePrefs({ coach_push_enabled: true }); toast(t('push.enabled'), 'ok');
+      } else { await disablePush(removeWhere); await savePrefs({ coach_push_enabled: false }); }
+    } catch (e) { setMsg(errMsg(e)); } finally { setBusy(false); }
+  };
+  return <section className="card stack" data-testid="coach-push"><h2>✨ {t('push.title')}</h2>
+    <p className="small muted">{t('push.text')}</p>
+    {mode === 'local' ? <p className="small">{t('coach.needOnline')}</p> : <>
+      <label className="check"><input type="checkbox" disabled={busy} checked={!!prefs.coach_push_enabled} onChange={e => toggle(e.target.checked)} />{t('push.toggle')}</label>
+      {!prefs.coach_consent && <p className="tiny muted">{t('push.noConsent')} <Link to="/coach">{t('coach.title')}</Link></p>}
+      {pushSupported() || <p className="tiny muted">{t('push.unsupported')}</p>}
+      {isIos() && !isStandalone() && <p className="tiny muted">{t('push.ios')}</p>}
+      {msg && <p className="err">{msg}</p>}</>}
+  </section>;
+}

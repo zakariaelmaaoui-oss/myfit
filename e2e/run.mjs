@@ -11,6 +11,7 @@ const step = async (name, fn) => { console.log('•', name); try { await fn(); }
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ ...devices['iPhone 13'], locale: 'en-US', acceptDownloads: true });
+await ctx.grantPermissions(['accelerometer', 'gyroscope']).catch(() => {});
 const page = await ctx.newPage();
 page.on('pageerror', e => errors.push(`pageerror ${page.url()}: ${e.message}`));
 page.on('console', m => { if (m.type() === 'error' && !/fonts\.g|Failed to load resource/.test(m.text())) errors.push(`console ${page.url()}: ${m.text()}`); });
@@ -148,6 +149,21 @@ await step('water + walking', async () => {
   await page.click('button:has-text("Stop & save")'); ok((await text()).includes('not saved'), 'very short walk not saved');
   await page.getByLabel('Minutes', { exact: true }).fill('30'); await page.click('section:has-text("Add a walk manually") button:has-text("Add")');
   ok((await text()).includes('30 / 30'), 'manual walk counts toward goal');
+  // 30 min, no steps, 74.4–75 kg → MET 3.5 × kg × 0.5 h ≈ 130 kcal
+  const kc = Number((await page.textContent('[data-testid=walk-today-kcal]')).replace(/[^\d]/g, ''));
+  ok(kc >= 125 && kc <= 135, `calories burned estimated from walk (${kc} kcal)`);
+  await page.click('button:has-text("Start walking")');
+  await page.evaluate(() => new Promise(res => { const t0 = performance.now(); const iv = setInterval(() => { const t = performance.now() - t0;
+    window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 0, z: 9.81 + 3 * Math.sin(2 * Math.PI * 2 * t / 1000) } }));
+    if (t > 6200) { clearInterval(iv); res(); } }, 20); }));
+  const live = await page.textContent('[data-testid=walk-live]');
+  const stepsLive = Number((live.match(/Steps\s*([\d,]+)/) || [])[1]?.replace(/,/g, '') || 0);
+  ok(stepsLive >= 10 && stepsLive <= 14, `motion sensor counts steps live (${stepsLive} steps in ~6 s at 2 Hz)`);
+  ok(/km/.test(live) && /kcal/.test(live), 'live distance and calories shown');
+  await page.click('button:has-text("Cancel")');
+  await go('/'); ok((await page.textContent('[data-testid=home-burned]')).match(/1[23]\d kcal/), 'home shows calories burned today');
+  await go('/coach'); ok((await text()).includes('needs the online account'), 'coach explains it needs the online account in device mode');
+  ok(await page.isVisible('[data-testid=coach-card]') === false, 'coach page reachable');
 });
 
 await step('emotional wellness', async () => {
@@ -203,7 +219,7 @@ await step('Arabic RTL + Darija + French', async () => {
 });
 
 await step('every page renders on mobile without horizontal scroll', async () => {
-  const routes = ['/', '/food', '/food/database', '/food/diary', '/food/fridge', '/food/recipes', '/food/recipes/couscous_beef', '/food/moroccan', '/food/planner', '/food/sugar', '/food/shopping', '/food/budget', '/food/custom',
+  const routes = ['/', '/coach', '/food', '/food/database', '/food/diary', '/food/fridge', '/food/recipes', '/food/recipes/couscous_beef', '/food/moroccan', '/food/planner', '/food/sugar', '/food/shopping', '/food/budget', '/food/custom',
     '/wellness', '/wellness/checkin', '/wellness/journal', '/wellness/breathing', '/wellness/stress', '/wellness/habits', '/wellness/drinks', '/wellness/water', '/wellness/walk', '/wellness/sleep', '/wellness/period',
     '/progress', '/progress/weight', '/progress/nutrition', '/progress/activity', '/progress/report', '/profile', '/profile/edit', '/profile/goals', '/profile/language', '/profile/notifications', '/profile/privacy', '/profile/settings'];
   const bad = [];

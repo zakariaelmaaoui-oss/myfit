@@ -18,10 +18,11 @@ export interface Prefs {
   id: string; notifications_enabled: boolean; calorie_excess_alert: boolean; sugar_alert: boolean;
   quiet_start: string; quiet_end: string; reminders: { type: string; time: string; enabled: boolean }[];
   weekly_report_day: number; theme?: 'system' | 'light' | 'dark';
+  coach_consent?: boolean; coach_consent_at?: string | null; coach_push_enabled?: boolean;
 }
 export const DEFAULT_PREFS = (id: string): Prefs => ({
   id, notifications_enabled: false, calorie_excess_alert: true, sugar_alert: true, quiet_start: '22:00', quiet_end: '07:00',
-  weekly_report_day: 0, theme: 'system',
+  weekly_report_day: 0, theme: 'system', coach_consent: false, coach_push_enabled: false,
   reminders: [
     { type: 'water', time: '10:00', enabled: true }, { type: 'water', time: '15:00', enabled: true },
     { type: 'walk', time: '18:00', enabled: true }, { type: 'meals', time: '21:00', enabled: true },

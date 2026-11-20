@@ -1,7 +1,7 @@
 # MyFit — Eat Better. Feel Better. Live Better.
 
 A mobile-first nutrition and healthy-lifestyle web app (installable PWA) in **English, French, Arabic (RTL) and Moroccan Darija**.
-MyFit contains **no artificial intelligence**: no chatbot, no image/food recognition, no generated advice, recipes, plans or reports. Everything comes from verified food data, standard formulas, stored recipes and content, and what the user enters.
+Food values, calculations, recipes, plans and reports come from verified food data, standard formulas, stored content and what the user enters — no AI. The only AI feature is the optional **MyFit Coach** (Claude, by Anthropic): a chat to ask questions about food and habits, plus a daily coaching message on the phone. Users must opt in; they can turn it off and delete the conversation at any time.
 
 ## Features
 
@@ -18,6 +18,8 @@ MyFit contains **no artificial intelligence**: no chatbot, no image/food recogni
 | Sugar tracker | Total, added and natural sugar; weekly and monthly views; list of high-added-sugar products; education; WHO 10 % / 5 % / custom guidance; gentle alerts |
 | Barcode | Open Food Facts lookup (optional), camera scanning where the browser supports BarcodeDetector, otherwise manual entry; marked "not verified" |
 | Emotional wellness | Hunger check-in (physical / emotional / craving), private journal, craving journal with weekly patterns, breathing exercises, 3-minute guided stress exercise, relaxation, tips, coping ideas. Suggests professional support after repeated loss-of-control or distress entries |
+| MyFit Coach (AI) | Chat with Claude (`claude-opus-5-5`, low effort, server-side refusal fallback) through `api/coach.ts`. It sees a summary of the user's own data (today's meals, targets, water, walking; never free-text health notes), follows safety rules (no diagnosis, no extreme diets, no guilt), keeps 40 questions/day per user, and saves the conversation privately. A daily push message (`api/daily-coach.ts`, Vercel Cron 08:00 UTC) gives one tip based on yesterday |
+| Steps & calories burned | During a walk, the phone's motion sensor counts steps live (while MyFit is open); distance = steps × stride (height × 0.413/0.415); calories = MET (from walking speed, Compendium of Physical Activities) × weight × time. Without the sensor, MET 3.5 is assumed |
 | Water / walking | 150 / 250 / 500 ml + custom amounts, adjustable goal, history. Walking timer (keeps running across pages), manual minutes and steps, goal, history |
 | Healthy drinks | 6 recipes with calculated values, and a clear note: no "detox" claims |
 | Weight | Weight, waist and other measurements, private photos, weekly and monthly averages, goal progress, note on daily fluctuations, pause option |
@@ -43,7 +45,8 @@ With no Supabase keys, the app runs in **device mode**: accounts (PBKDF2-hashed 
 1. Create a project at supabase.com.
 2. Open **SQL Editor** and run `supabase/migrations/20261118000000_init.sql`, then `supabase/seed.sql`. This creates the tables, Row Level Security, the private `progress-photos` bucket and the `delete_my_account()` function, and loads the foods and recipes.
 3. Go to **Authentication → URL Configuration** and set the Site URL to your Vercel URL. Add `https://YOUR-DOMAIN/reset-password` to the Redirect URLs.
-4. Go to **Project Settings → API** and copy the Project URL and the `anon` public key into the environment variables below.
+4. Go to **Project Settings → API** and copy the Project URL and the `anon`/publishable key into the environment variables below.
+   Then run `supabase/migrations/20261120000000_coach_push_steps.sql` too (coach, phone notifications, steps).
 5. Backups: Supabase makes daily backups on paid plans (Database → Backups). On the free plan, export regularly with `supabase db dump`.
 
 ## Deploy to Vercel (any account)
@@ -54,6 +57,9 @@ With no Supabase keys, the app runs in **device mode**: accounts (PBKDF2-hashed 
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
    - `VITE_ENABLE_OPENFOODFACTS` = `true` (optional)
+   - MyFit Coach: `ANTHROPIC_API_KEY` (from console.anthropic.com; usage is billed by Anthropic)
+   - Daily phone message: `SUPABASE_SERVICE_ROLE_KEY` (Supabase → API keys → secret), `VITE_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`
+     (generate with `npx web-push generate-vapid-keys`), and `CRON_SECRET` (any long random string). Server-only keys must **not** start with `VITE_`.
 4. Deploy, then put the deployment URL into Supabase (step 3 above).
 
 Using the CLI instead, logged in to the account you want:
@@ -97,6 +103,9 @@ node e2e/run.mjs
 - Open Food Facts (optional, community data, marked unverified).
 
 ## Limitations
+- Steps are counted only while MyFit is open during a walk (web apps cannot read the phone's step counter in the background). iPhone asks for motion permission when you start a walk.
+- Phone notifications on iPhone need iOS 16.4+ and MyFit added to the Home Screen. Vercel's free plan runs the daily message once a day.
+- Coach answers are written by an AI and can be wrong; they are not medical advice.
 - Reminders only fire while the app is open or running in the background. Push notifications when the app is fully closed would need a push server (Web Push + VAPID keys), which is not included.
 - Automatic step counting (Apple Health / Google Fit) can't be accessed from a web app; steps are entered by hand.
 - SR Legacy has no added-sugar values. Added sugar is 0 for single unprocessed foods and equal to total sugar for pure sweeteners and sugar-only drinks; otherwise it is "unknown".

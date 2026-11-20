@@ -5,7 +5,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 export const TABLES = ['profiles', 'user_preferences', 'nutrition_goals', 'custom_foods', 'diary_entries', 'favorites', 'meal_plan_items',
   'fridge_items', 'water_logs', 'activity_logs', 'weight_logs', 'mood_journal', 'craving_journal', 'habit_logs', 'sleep_logs',
-  'period_logs', 'shopping_items', 'food_prices', 'notifications'] as const;
+  'period_logs', 'shopping_items', 'food_prices', 'notifications', 'ai_messages', 'push_subscriptions'] as const;
 export type Table = typeof TABLES[number];
 /** Tables whose primary key is the user id itself. */
 export const SINGLETON: Table[] = ['profiles', 'user_preferences'];
@@ -30,6 +30,7 @@ export interface Backend {
   photoUrl(path: string): Promise<string | null>;
   removePhoto(path: string): Promise<void>;
   deleteAccount(uid: string): Promise<void>;
+  accessToken(): Promise<string | null>;
 }
 
 export class ValidationError extends Error {}
@@ -69,6 +70,7 @@ class SupabaseBackend implements Backend {
   constructor(url: string, key: string) { this.sb = createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } }); }
   private u(x: any): AuthUser | null { return x ? { id: x.id, email: x.email ?? '' } : null; }
   async getUser() { const { data } = await this.sb.auth.getSession(); return this.u(data.session?.user); }
+  async accessToken() { const { data } = await this.sb.auth.getSession(); return data.session?.access_token ?? null; }
   onAuthChange(cb: (u: AuthUser | null) => void) {
     const { data } = this.sb.auth.onAuthStateChange((_e, s) => cb(this.u(s?.user)));
     return () => data.subscription.unsubscribe();
@@ -139,6 +141,7 @@ class LocalBackend implements Backend {
   private emit(u: AuthUser | null) { this.listeners.forEach(l => l(u)); }
   private uidOf(row: any, table: Table) { return SINGLETON.includes(table) ? row.id : row.user_id; }
   async getUser() { return LS.get('myfit:session'); }
+  async accessToken() { return null; }
   onAuthChange(cb: (u: AuthUser | null) => void) { this.listeners.add(cb); return () => { this.listeners.delete(cb); }; }
   async signUp(email: string, password: string) {
     email = email.trim().toLowerCase();

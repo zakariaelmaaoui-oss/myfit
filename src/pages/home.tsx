@@ -26,6 +26,7 @@ export function Home() {
   const acts = data.activity_logs.filter(a => a.date === today);
   const steps = acts.reduce((a, x) => a + (Number(x.steps) || 0), 0);
   const walkMin = acts.reduce((a, x) => a + Number(x.minutes), 0);
+  const burned = acts.reduce((a, x) => a + (Number(x.kcal_burned) || 0), 0);
   const hour = new Date().getHours();
   const e = { c: tot.totals.carbs * 4, p: tot.totals.protein * 4, f: tot.totals.fat * 9 }; const eT = e.c + e.p + e.f;
   const share = (v: number) => (eT > 0 ? Math.round((v / eT) * 100) : 0);
@@ -35,7 +36,7 @@ export function Home() {
     <div className="hdr">
       <Link to="/profile" className="avatar" aria-label={t('nav.profile')}>{(profile?.name ?? '?').slice(0, 1).toUpperCase()}</Link>
       <div className="grow" style={{ minWidth: 0 }}><small>{t(hour < 12 ? 'home.greetM' : hour < 18 ? 'home.greetA' : 'home.greetE')}</small><b className="ellipsis" style={{ display: 'block' }}>{profile?.name}</b></div>
-      <Link to="/food/diary" className="iconbtn" aria-label={t('nav.diary')}><Icon n="calendar" /></Link>
+      <Link to="/coach" className="iconbtn" aria-label={t('coach.title')}><span style={{ fontSize: '1.1rem' }}>✨</span></Link>
       <Link to="/profile/notifications" className="iconbtn" aria-label={t('nav.notifications')}><Icon n="bell" /></Link>
     </div>
     {mode === 'local' && <div className="banner small">{t('auth.localModeShort')} <Link to="/profile/privacy">{t('common.learnMore')}</Link></div>}
@@ -44,15 +45,22 @@ export function Home() {
     <Link to="/progress" className="weekcard" aria-label={t('home.weeklyProgress')}>
       <div className="grow"><span className="pill"><i>⚡</i>{t('home.dailyIntake')}</span><h2>{t('home.weeklyProgress')}</h2>
         <p className="tiny" style={{ marginTop: 6, opacity: .8 }}>{t('home.daysLogged', { n: loggedDays })}</p></div>
-      <div className="ringwrap"><Ring value={loggedDays} max={7} size={92} stroke={10} color="var(--ink)"><b style={{ fontSize: '1.4rem', lineHeight: 1 }}>{loggedDays}</b><span className="tiny">{t('home.days')}</span></Ring></div>
+      <div className="ringwrap"><Ring value={loggedDays} max={7} size={92} stroke={10} color="var(--pink)"><b style={{ fontSize: '1.4rem', lineHeight: 1 }}>{loggedDays}</b><span className="tiny">{t('home.days')}</span></Ring></div>
     </Link>
 
     <div className="grid2">
-      <Link to="/wellness/walk" className="metric"><div className="top"><span>{t('home.stepsTitle')}</span><span className="mi" style={{ background: '#fdeadb' }}>👣</span></div>
-        {steps > 0 ? <span className="val">{nf(steps)}<small>{t('walk.stepsShort')}</small></span> : <span className="val">{nf(walkMin)}<small>{t('unit.min')} / {profile?.walk_goal_min ?? 30}</small></span>}</Link>
-      <Link to="/wellness/water" className="metric"><div className="top"><span>{t('home.drinkWater')}</span><span className="mi" style={{ background: '#dcefff' }}>💧</span></div>
+      <Link to="/wellness/walk" className="metric"><div className="top"><span>{t('home.stepsTitle')}</span><span className="mi" style={{ background: 'var(--pink-soft)' }}>👣</span></div>
+        {steps > 0 ? <span className="val">{nf(steps)}<small>{t('walk.stepsShort')}</small></span> : <span className="val">{nf(walkMin)}<small>{t('unit.min')} / {profile?.walk_goal_min ?? 30}</small></span>}
+        <span className="tiny muted" data-testid="home-burned">🔥 {nf(burned)} kcal {t('home.burned')}</span></Link>
+      <Link to="/wellness/water" className="metric"><div className="top"><span>{t('home.drinkWater')}</span><span className="mi" style={{ background: 'var(--sky-soft)' }}>💧</span></div>
         <span className="val">{glasses}<small>{t('home.glass')} · <span data-testid="home-water" dir="ltr">{nf(water / 1000, 2)} L</span></small></span></Link>
     </div>
+
+    <Link to="/coach" className="coachcard" data-testid="coach-card">
+      <span className="coachavatar">✨</span>
+      <div className="grow" style={{ minWidth: 0 }}><b>{t('coach.cardTitle')}</b><span className="small">{t('coach.cardText')}</span></div>
+      <span className="coachgo"><Icon n="next" s={18} className="flip" /></span>
+    </Link>
 
     <section className="cal">
       <div className="row between"><h2>{df(sel, { month: 'long', year: 'numeric' })}</h2>

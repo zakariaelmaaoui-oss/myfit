@@ -12,7 +12,7 @@ import { MOODS } from './tracking';
 export function WellnessHub() {
   const { t, lang } = useI18n(); const { profile } = useApp();
   const tiles = [
-    { to: '/wellness/checkin', i: 'heart', c: 't-rose', k: 'checkin' }, { to: '/wellness/journal', i: 'book', c: 't-lav', k: 'journal' },
+    { to: '/coach', i: 'smile', c: 't-green', k: 'coach' }, { to: '/wellness/checkin', i: 'heart', c: 't-rose', k: 'checkin' }, { to: '/wellness/journal', i: 'book', c: 't-lav', k: 'journal' },
     { to: '/wellness/stress', i: 'leaf', c: 't-green', k: 'stress' }, { to: '/wellness/breathing', i: 'wind', c: 't-sky', k: 'breathing' },
     { to: '/wellness/habits', i: 'check', c: 't-butter', k: 'habits' }, { to: '/wellness/drinks', i: 'cup', c: 't-peach', k: 'drinks' },
     { to: '/wellness/water', i: 'drop', c: 't-sky', k: 'water' }, { to: '/wellness/walk', i: 'walk', c: 't-peach', k: 'walk' },

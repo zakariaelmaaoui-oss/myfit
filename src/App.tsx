@@ -14,6 +14,7 @@ import { Sugar } from './pages/sugar';
 import { Breathing, CheckIn, Drinks, Habits, Journal, Stress, WellnessHub } from './pages/wellness';
 import { Period, Sleep, Walk, Water } from './pages/tracking';
 import { ActivityHistory, NutritionCharts, ProgressHub, Report, Weight } from './pages/progress';
+import { Coach } from './pages/coach';
 import { EditProfile, Goals, Language, Notifications, Privacy, ProfileHub, Settings, applyTheme } from './pages/profile';
 
 function Nav() {
@@ -69,6 +70,7 @@ export default function App() {
     <Route path="/food/shopping" element={<Shell><Shopping /></Shell>} />
     <Route path="/food/budget" element={<Shell><Budget /></Shell>} />
     <Route path="/food/custom" element={<Shell><CustomFoods /></Shell>} />
+    <Route path="/coach" element={<Shell><Coach /></Shell>} />
     <Route path="/wellness" element={<Shell><WellnessHub /></Shell>} />
     <Route path="/wellness/checkin" element={<Shell><CheckIn /></Shell>} />
     <Route path="/wellness/journal" element={<Shell><Journal /></Shell>} />
