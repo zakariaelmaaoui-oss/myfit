@@ -453,3 +453,12 @@ S('sport.safety', 'Stop if you feel pain, dizziness or chest pain. Pregnant or w
 S('sport.searchPh', 'Search an exercise…', 'Rechercher un exercice…', 'ابحثي عن تمرين…', 'قلبي على تمرين…');
 S('sport.cat.all', 'All', 'Tous', 'الكل', 'كلشي'); S('sport.cat.cardio', 'Cardio', 'Cardio', 'كارديو', 'كارديو'); S('sport.cat.strength', 'Strength', 'Renforcement', 'القوة', 'التقوية');
 S('sport.cat.core', 'Abs & core', 'Abdos', 'البطن', 'الكرش'); S('sport.cat.flex', 'Flexibility', 'Souplesse', 'المرونة', 'التمطيط'); S('sport.cat.daily', 'Sports & daily life', 'Sports & quotidien', 'رياضات وحياة يومية', 'رياضات وحياة يومية');
+S('stats.myActivity', 'My activity', 'Mon activité', 'نشاطي', 'النشاط ديالي');
+S('stats.dailyTarget', 'Daily target', 'Objectif du jour', 'هدف اليوم', 'الهدف ديال النهار'); S('stats.dailyTargetSub', 'Calories eaten vs target', 'Calories vs objectif', 'السعرات مقابل الهدف', 'الكالوري مقابل الهدف');
+S('stats.completed', 'completed', 'atteint', 'منجز', 'تسالى'); S('stats.burned', 'Calories burned', 'Calories brûlées', 'سعرات محروقة', 'كالوري تحرقو');
+S('stats.weightChange', 'Weight change (30 d)', 'Évolution du poids (30 j)', 'تغير الوزن (30 يوما)', 'تبدل الوزن (30 يوم)'); S('stats.tracking', 'Tracking stats', 'Suivi', 'إحصائيات المتابعة', 'المتابعة');
+S('stats.metric.kcal', 'Calories eaten', 'Calories consommées', 'السعرات المستهلكة', 'الكالوري اللي كليتي'); S('stats.metric.burned', 'Calories burned', 'Calories brûlées', 'السعرات المحروقة', 'الكالوري اللي تحرقو');
+S('stats.metric.minutes', 'Active minutes', 'Minutes actives', 'دقائق النشاط', 'دقايق الحركة'); S('stats.tapDay', 'Tap a day to see it.', 'Touchez un jour pour le voir.', 'اضغطي على يوم لعرضه.', 'ضغطي على نهار باش تشوفيه.');
+S('sport.workoutsTitle', 'Workouts', 'Entraînements', 'التمارين', 'التمارين'); S('sport.category', 'Category', 'Catégorie', 'الفئة', 'النوع');
+S('sport.tag.all', 'All', 'Tous', 'الكل', 'كلشي'); S('sport.tag.fullbody', 'Full body', 'Corps entier', 'الجسم كاملا', 'الجسم كامل'); S('sport.tag.strength', 'Strength', 'Renforcement', 'القوة', 'التقوية');
+S('sport.tag.core', 'Abs & core', 'Abdos', 'البطن', 'الكرش'); S('sport.tag.cardio', 'Cardio', 'Cardio', 'كارديو', 'كارديو'); S('sport.tag.flex', 'Stretch', 'Étirements', 'التمدد', 'التمطيط');

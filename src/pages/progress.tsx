@@ -6,7 +6,7 @@ import { useI18n } from '../lib/i18n';
 import { addDays, goalProgress, isoDate, lastNDays, monthlyAverages, startOfWeek, sumNutrients, weeklyAverages, weeklyReport } from '../lib/nutrition';
 import { backend } from '../lib/store';
 import { WEIGHT_NOTE, t4 } from '../data/content';
-import { Bar, Confirm, Empty, Icon, Modal, Page, Seg, errMsg, useFmt } from '../components/ui';
+import { AreaChart, Bar, Confirm, Empty, Gauge, Icon, Modal, Page, Seg, errMsg, useFmt } from '../components/ui';
 
 export function ProgressHub() {
   const { t, nf, df } = useI18n(); const { data, targets, profile } = useApp();
@@ -15,29 +15,47 @@ export function ProgressHub() {
   const kcalOf = (d: string) => sumNutrients(data.diary_entries.filter(e => e.date === d).map(r => ({ kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat, fiber: r.fiber, sugar: r.sugar, addedSugar: r.added_sugar }))).totals;
   const target = targets?.kcal ?? null; const selT = kcalOf(sel);
   const cols = days.map(d => { const k = kcalOf(d).kcal; return { d, k, pct: target ? Math.round((k / target) * 100) : null }; });
-  const maxPct = Math.max(110, ...cols.map(c => c.pct ?? 0));
+  const [metric, setMetric] = useState<'kcal' | 'burned' | 'minutes'>('kcal');
+  const burnedOf = (d: string) => data.activity_logs.filter(a => a.date === d).reduce((s2, a) => s2 + (Number(a.kcal_burned) || 0), 0);
+  const minutesOf = (d: string) => data.activity_logs.filter(a => a.date === d).reduce((s2, a) => s2 + Number(a.minutes), 0);
+  const series = days.map(d => metric === 'kcal' ? cols.find(c => c.d === d)!.k : metric === 'burned' ? burnedOf(d) : minutesOf(d));
+  const burnedSel = burnedOf(sel); const burnedPrev = burnedOf(addDays(sel, -1));
+  const burnTrend = burnedPrev > 0 ? Math.round(((burnedSel - burnedPrev) / burnedPrev) * 100) : null;
   const walkWeek = days.map(d => data.activity_logs.filter(a => a.date === d).reduce((s, a) => s + Number(a.minutes), 0));
   const walkMax = Math.max(1, ...walkWeek);
   const weights = [...data.weight_logs].filter(w => w.weight_kg).sort((a, b) => a.date.localeCompare(b.date));
   const lastW = weights.length ? Number(weights[weights.length - 1].weight_kg) : null;
   const wSpark = weights.slice(-10).map(w => Number(w.weight_kg)); const wMin = Math.min(...wSpark), wMax = Math.max(...wSpark);
+  const recentW = weights.filter(w => w.date >= addDays(today, -30)); const wChange = recentW.length >= 2 ? Math.round((Number(recentW[recentW.length - 1].weight_kg) - Number(recentW[0].weight_kg)) * 10) / 10 : null;
   const waterSel = data.water_logs.filter(w => w.date === sel).reduce((a, w) => a + Number(w.ml), 0);
   const glassGoal = Math.max(1, Math.round((targets?.waterMl ?? 2000) / 250)); const glasses = Math.floor(waterSel / 250);
   const tiles = [{ to: '/progress/weight', i: '⚖️', k: 'weight' }, { to: '/progress/nutrition', i: '📊', k: 'nutritionCharts' }, { to: '/progress/activity', i: '🚶‍♀️', k: 'activity' }, { to: '/progress/report', i: '📝', k: 'report' }];
-  return <Page title={t('stats.title')}>
+  return <Page title={t('stats.myActivity')}>
+    <div className="activitygrid">
+      <section className="card center" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+        <div className="row between" style={{ width: '100%' }}><b className="small">{t('stats.dailyTarget')}</b><span className="tiny muted">{df(sel, { day: 'numeric', month: 'short' })}</span></div>
+        <span className="tiny muted" style={{ alignSelf: 'flex-start' }}>{t('stats.dailyTargetSub')}</span>
+        <Gauge value={selT.kcal} max={target ?? 0} size={150}><b data-testid="stat-pct">{target ? `${Math.round((selT.kcal / target) * 100)}%` : '—'}</b><span className="tiny muted">{t('stats.completed')}</span></Gauge>
+        <span className="small"><b data-testid="stat-kcal">{nf(selT.kcal)}</b> / {target ? nf(target) : '—'} kcal</span>
+      </section>
+      <div className="stack" style={{ gap: 12 }}>
+        <div className="statcard"><div className="top"><span className="ico">🔥</span>{burnTrend !== null && <span className={`trend ${burnTrend < 0 ? 'down' : ''}`}>{burnTrend > 0 ? '+' : ''}{burnTrend}%</span>}</div>
+          <span className="v">{nf(burnedSel)}<small>kcal</small></span><span className="tiny muted">{t('stats.burned')}</span></div>
+        <div className="statcard"><div className="top"><span className="ico">⚖️</span></div>
+          <span className="v">{wChange !== null ? `${wChange > 0 ? '+' : ''}${nf(wChange, 1)}` : (lastW !== null ? nf(lastW, 1) : '—')}<small>kg</small></span><span className="tiny muted">{wChange !== null ? t('stats.weightChange') : t('nav.weight')}</span></div>
+      </div>
+    </div>
+
     <section className="card">
-      <div className="row between"><b>{t('stats.calories')}</b><div className="row" style={{ gap: 6 }}>
+      <div className="row between"><h2>{t('stats.tracking')}</h2><div className="row" style={{ gap: 6 }}>
         <button className="navarrow" aria-label={t('common.prev')} onClick={() => setWeek(addDays(week, -7))}><Icon n="back" s={16} className="flip" /></button>
         <button className="navarrow" aria-label={t('common.next')} disabled={addDays(week, 7) > today} onClick={() => setWeek(addDays(week, 7))}><Icon n="next" s={16} className="flip" /></button></div></div>
-      <div className="row between" style={{ alignItems: 'flex-end', marginTop: 6 }}>
-        <span className="statbig" data-testid="stat-kcal">{nf(selT.kcal)}<small>{t('unit.kcal')}</small></span>
-        <span className="small muted">{t('stats.target')}: <b style={{ color: 'var(--text)' }}>{target ? nf(target) : '—'}</b> {t('unit.kcal')}</span></div>
-      <p className="tiny muted" style={{ marginTop: 4 }}>{df(sel, { weekday: 'long', day: 'numeric', month: 'long' })}</p>
-      <div className="bars" role="list">{cols.map(c => <button key={c.d} role="listitem" className={`bcol ${c.d === sel ? 'on' : ''}`} disabled={c.d > today} onClick={() => setSel(c.d)} aria-label={`${df(c.d)}: ${nf(c.k)} kcal`}>
-        <span className="pct">{c.pct !== null && c.k > 0 ? `${c.pct}%` : ''}</span>
-        <div className="bstack"><div className="btarget" style={{ height: `${(100 / maxPct) * 100}%` }} />{c.k > 0 && <div className="bfill" style={{ height: `${Math.min(100, ((c.pct ?? 0) / maxPct) * 100)}%` }} />}</div>
-        <span className="dl">{df(c.d, { weekday: 'short' })}</span></button>)}</div>
-      <p className="tiny muted" style={{ marginTop: 8 }}>{t('stats.barsNote')}</p>
+      <div className="row between" style={{ marginTop: 8, gap: 8, flexWrap: 'wrap' }}>
+        <div><b>{t('stats.metric.' + metric)}</b><div className="tiny muted">{df(days[0], { day: 'numeric', month: 'short' })} – {df(days[6], { day: 'numeric', month: 'short' })}</div></div>
+        <select value={metric} onChange={e => setMetric(e.target.value as any)} style={{ width: 'auto', minHeight: 36, padding: '4px 10px', borderRadius: 999 }} aria-label={t('stats.tracking')}>
+          {(['kcal', 'burned', 'minutes'] as const).map(m => <option key={m} value={m}>{t('stats.metric.' + m)}</option>)}</select></div>
+      <AreaChart values={series} labels={days.map(d => df(d, { weekday: 'short' }))} selected={Math.max(0, days.indexOf(sel))} onSelect={i => days[i] <= today && setSel(days[i])} unit={metric === 'minutes' ? ' min' : ''} />
+      <p className="tiny muted">{t('stats.tapDay')}</p>
     </section>
     <div className="grid2">
       <Link to="/progress/activity" className="metric"><div className="top"><span className="row" style={{ gap: 8 }}><span className="mi" style={{ background: '#dff5ea' }}>🏃‍♀️</span>{t('stats.exercise')}</span></div>

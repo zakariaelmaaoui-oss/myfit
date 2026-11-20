@@ -103,40 +103,42 @@ EXERCISES.sort((a, b) => b.met - a.met);
 export const REST_MET = 1.5;
 export const getExercise = (id: string) => EXERCISES.find(e => e.id === id);
 
-export interface Workout { id: string; emoji: string; name: T; desc: T; level: 1 | 2 | 3; impact: 'low' | 'high'; blocks: { ex: string | 'rest'; sec: number }[] }
+export type WTag = 'fullbody' | 'strength' | 'core' | 'cardio' | 'flex';
+export const WTAGS: WTag[] = ['fullbody', 'strength', 'core', 'cardio', 'flex'];
+export interface Workout { id: string; tag?: WTag; emoji: string; name: T; desc: T; level: 1 | 2 | 3; impact: 'low' | 'high'; blocks: { ex: string | 'rest'; sec: number }[] }
 const rounds = (n: number, list: [string, number][]) => Array.from({ length: n }, () => list.map(([ex, sec]) => ({ ex, sec }))).flat();
 export const WORKOUTS: Workout[] = [
-  { id: 'hiit15', emoji: '🔥', level: 2, impact: 'high', name: L('Fat-burn HIIT · 14 min', 'HIIT brûle-graisses · 14 min', 'تمرين HIIT لحرق الدهون · 14 د', 'HIIT باش تحرقي · 14 د'),
+  { id: 'hiit15', tag: 'fullbody', emoji: '🔥', level: 2, impact: 'high', name: L('Fat-burn HIIT · 14 min', 'HIIT brûle-graisses · 14 min', 'تمرين HIIT لحرق الدهون · 14 د', 'HIIT باش تحرقي · 14 د'),
     desc: L('40 s effort / 20 s rest, 3 rounds. Short and intense.', '40 s d’effort / 20 s de repos, 3 tours. Court et intense.', '40 ثانية جهد / 20 ثانية راحة، 3 جولات. قصير ومكثف.', '40 ثانية خدمة / 20 راحة، 3 دورات. قصير وقوي.'),
     blocks: [{ ex: 'march', sec: 60 }, ...rounds(3, [['jumping_jacks', 40], ['rest', 20], ['squats', 40], ['rest', 20], ['mountain_climbers', 40], ['rest', 20], ['high_knees', 40], ['rest', 20]]), { ex: 'yoga', sec: 60 }] },
-  { id: 'strength17', emoji: '💪', level: 2, impact: 'low', name: L('Home strength · 17 min', 'Renforcement maison · 17 min', 'تقوية في المنزل · 17 د', 'تقوية فالدار · 17 د'),
+  { id: 'strength17', tag: 'strength', emoji: '💪', level: 2, impact: 'low', name: L('Home strength · 17 min', 'Renforcement maison · 17 min', 'تقوية في المنزل · 17 د', 'تقوية فالدار · 17 د'),
     desc: L('No equipment. Builds muscle, which helps burn more every day.', 'Sans matériel. Renforce les muscles, qui brûlent plus chaque jour.', 'بدون أدوات. يقوي العضلات التي تحرق أكثر كل يوم.', 'بلا ماتيريال. كيقوي العضلات اللي كيحرقو كثر كل نهار.'),
     blocks: [{ ex: 'march', sec: 60 }, ...rounds(3, [['squats', 45], ['rest', 15], ['pushups', 45], ['rest', 15], ['lunges', 45], ['rest', 15], ['glute_bridge', 45], ['rest', 15], ['plank', 30], ['rest', 30]]), { ex: 'yoga', sec: 60 }] },
-  { id: 'lowimpact15', emoji: '🌸', level: 1, impact: 'low', name: L('Low-impact cardio · 15 min', 'Cardio doux · 15 min', 'كارديو خفيف · 15 د', 'كارديو خفيف · 15 د'),
+  { id: 'lowimpact15', tag: 'cardio', emoji: '🌸', level: 1, impact: 'low', name: L('Low-impact cardio · 15 min', 'Cardio doux · 15 min', 'كارديو خفيف · 15 د', 'كارديو خفيف · 15 د'),
     desc: L('No jumping — kind to knees, good for beginners.', 'Sans sauts — doux pour les genoux, idéal pour débuter.', 'بدون قفز، لطيف على الركبتين ومناسب للمبتدئات.', 'بلا نط، مزيان للركابي وللي باقة كتبدا.'),
     blocks: [{ ex: 'march', sec: 60 }, ...rounds(4, [['march', 60], ['squats', 40], ['rest', 20], ['dancing', 60], ['glute_bridge', 40], ['rest', 20]]), { ex: 'yoga', sec: 120 }] },
-  { id: 'rope10', emoji: '🪢', level: 3, impact: 'high', name: L('Jump-rope challenge · 11 min', 'Défi corde à sauter · 11 min', 'تحدي نط الحبل · 11 د', 'تحدي الحبل · 11 د'),
+  { id: 'rope10', tag: 'cardio', emoji: '🪢', level: 3, impact: 'high', name: L('Jump-rope challenge · 11 min', 'Défi corde à sauter · 11 min', 'تحدي نط الحبل · 11 د', 'تحدي الحبل · 11 د'),
     desc: L('One of the biggest calorie burners per minute.', 'L’un des exercices qui brûlent le plus par minute.', 'من أكثر التمارين حرقا للسعرات في الدقيقة.', 'من أكثر التمارين اللي كيحرقو فالدقيقة.'),
     blocks: [{ ex: 'march', sec: 60 }, ...rounds(5, [['jump_rope', 60], ['rest', 60]])] },
-  { id: 'abs10', emoji: '🍫', level: 1, impact: 'low', name: L('Abs & core · 10 min', 'Abdos & gainage · 10 min', 'البطن والجذع · 10 د', 'الكرش · 10 د'),
+  { id: 'abs10', tag: 'core', emoji: '🍫', level: 1, impact: 'low', name: L('Abs & core · 10 min', 'Abdos & gainage · 10 min', 'البطن والجذع · 10 د', 'الكرش · 10 د'),
     desc: L('Flat-belly routine: 45 s work / 15 s rest, 2 rounds.', 'Routine ventre : 45 s d’effort / 15 s de repos, 2 tours.', 'روتين البطن: 45 ثانية جهد / 15 راحة، جولتان.', 'روتين الكرش: 45 ثانية خدمة / 15 راحة، جوج دورات.'),
     blocks: [{ ex: 'march', sec: 30 }, ...rounds(2, [['crunches', 45], ['rest', 15], ['bicycle_crunches', 45], ['rest', 15], ['leg_raises', 45], ['rest', 15], ['russian_twists', 45], ['rest', 15], ['plank', 45], ['rest', 15]]), { ex: 'stretching', sec: 30 }] },
-  { id: 'legs16', emoji: '🍑', level: 2, impact: 'low', name: L('Legs & glutes · 16 min', 'Jambes & fessiers · 16 min', 'الرجلان والمؤخرة · 16 د', 'الرجلين واللور · 16 د'),
+  { id: 'legs16', tag: 'strength', emoji: '🍑', level: 2, impact: 'low', name: L('Legs & glutes · 16 min', 'Jambes & fessiers · 16 min', 'الرجلان والمؤخرة · 16 د', 'الرجلين واللور · 16 د'),
     desc: L('Tone legs and glutes at home, no equipment.', 'Raffermir jambes et fessiers à la maison, sans matériel.', 'شد الرجلين والمؤخرة في المنزل بدون أدوات.', 'شدي الرجلين واللور فالدار بلا ماتيريال.'),
     blocks: [{ ex: 'march', sec: 60 }, ...rounds(2, [['squats', 45], ['rest', 15], ['lunges', 45], ['rest', 15], ['sumo_squats', 45], ['rest', 15], ['glute_bridge', 45], ['rest', 15], ['donkey_kicks', 45], ['rest', 15], ['fire_hydrants', 45], ['rest', 15], ['wall_sit', 30], ['rest', 30]]), { ex: 'stretching', sec: 60 }] },
-  { id: 'cardio20', emoji: '⚡', level: 3, impact: 'high', name: L('Cardio blast · 20 min', 'Cardio intense · 20 min', 'كارديو قوي · 20 د', 'كارديو قوي · 20 د'),
+  { id: 'cardio20', tag: 'cardio', emoji: '⚡', level: 3, impact: 'high', name: L('Cardio blast · 20 min', 'Cardio intense · 20 min', 'كارديو قوي · 20 د', 'كارديو قوي · 20 د'),
     desc: L('Big calorie burn: 40 s / 20 s, 3 rounds of 5 moves.', 'Grosse dépense : 40 s / 20 s, 3 tours de 5 mouvements.', 'حرق كبير: 40/20 ثانية، 3 جولات من 5 حركات.', 'حرق كبير: 40/20 ثانية، 3 دورات ديال 5 حركات.'),
     blocks: [{ ex: 'jog_in_place', sec: 120 }, ...rounds(3, [['jumping_jacks', 40], ['rest', 20], ['butt_kicks', 40], ['rest', 20], ['skater_jumps', 40], ['rest', 20], ['burpees', 40], ['rest', 20], ['jump_squats', 40], ['rest', 20]]), { ex: 'stretching', sec: 120 }] },
-  { id: 'beginner12', emoji: '🌱', level: 1, impact: 'low', name: L('Full-body beginner · 12 min', 'Corps entier débutant · 12 min', 'الجسم كاملا للمبتدئين · 12 د', 'الجسم كامل للمبتدئين · 12 د'),
+  { id: 'beginner12', tag: 'fullbody', emoji: '🌱', level: 1, impact: 'low', name: L('Full-body beginner · 12 min', 'Corps entier débutant · 12 min', 'الجسم كاملا للمبتدئين · 12 د', 'الجسم كامل للمبتدئين · 12 د'),
     desc: L('Gentle start, no jumping. Perfect if you are new to exercise.', 'Départ en douceur, sans sauts. Idéal pour débuter.', 'بداية لطيفة بدون قفز، مثالية للمبتدئات.', 'بداية خفيفة بلا نط، مزيانة إلا باقة كتبداي.'),
     blocks: [{ ex: 'march', sec: 60 }, ...rounds(2, [['march', 45], ['rest', 15], ['squats', 40], ['rest', 20], ['wall_pushups', 40], ['rest', 20], ['glute_bridge', 40], ['rest', 20], ['calf_raises', 40], ['rest', 20], ['dead_bug', 40], ['rest', 20]]), { ex: 'stretching', sec: 60 }] },
-  { id: 'boxing15', emoji: '🥊', level: 2, impact: 'low', name: L('Boxing cardio · 15 min', 'Cardio boxe · 15 min', 'كارديو الملاكمة · 15 د', 'كارديو البوكس · 15 د'),
+  { id: 'boxing15', tag: 'cardio', emoji: '🥊', level: 2, impact: 'low', name: L('Boxing cardio · 15 min', 'Cardio boxe · 15 min', 'كارديو الملاكمة · 15 د', 'كارديو البوكس · 15 د'),
     desc: L('Punch out stress and burn calories.', 'Défoulez-vous et brûlez des calories.', 'أفرغي التوتر واحرقي السعرات.', 'خرجي الستريس وحرقي الكالوري.'),
     blocks: [{ ex: 'march', sec: 60 }, ...rounds(4, [['shadow_boxing', 60], ['high_knees', 30], ['rest', 30], ['mountain_climbers', 30], ['rest', 30]]), { ex: 'stretching', sec: 120 }] },
-  { id: 'stretch10', emoji: '🧘‍♀️', level: 1, impact: 'low', name: L('Stretch & relax · 10 min', 'Étirements & détente · 10 min', 'تمدد واسترخاء · 10 د', 'تمطيط وراحة · 10 د'),
+  { id: 'stretch10', tag: 'flex', emoji: '🧘‍♀️', level: 1, impact: 'low', name: L('Stretch & relax · 10 min', 'Étirements & détente · 10 min', 'تمدد واسترخاء · 10 د', 'تمطيط وراحة · 10 د'),
     desc: L('Recovery day: gentle stretching and breathing.', 'Jour de récupération : étirements doux et respiration.', 'يوم التعافي: تمدد لطيف وتنفس.', 'نهار الراحة: تمطيط خفيف وتنفس.'),
     blocks: [{ ex: 'stretching', sec: 240 }, { ex: 'yoga', sec: 240 }, { ex: 'tai_chi', sec: 120 }] },
-  { id: 'dance20', emoji: '💃', level: 1, impact: 'low', name: L('Dance party · 20 min', 'Danse · 20 min', 'حفلة رقص · 20 د', 'شطيح · 20 د'),
+  { id: 'dance20', tag: 'cardio', emoji: '💃', level: 1, impact: 'low', name: L('Dance party · 20 min', 'Danse · 20 min', 'حفلة رقص · 20 د', 'شطيح · 20 د'),
     desc: L('Fun cardio: put on your favourite songs.', 'Cardio fun : mettez vos chansons préférées.', 'كارديو ممتع: شغلي أغانيك المفضلة.', 'كارديو زوين: شعلي الغنايا اللي كتعجبك.'),
     blocks: [{ ex: 'march', sec: 120 }, { ex: 'dancing', sec: 960 }, { ex: 'yoga', sec: 120 }] },
 ];

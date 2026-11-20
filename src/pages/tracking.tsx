@@ -96,12 +96,12 @@ export function Walk() {
     </section>
     <section className="card stack tight"><div className="row between"><h2>{t('walk.today')}</h2><b className="num">{nf(todayMin)} / {goal} {t('unit.min')}</b></div><Bar value={todayMin} max={goal} />
       <div className="grid2" style={{ marginTop: 8 }}>
-        <div className="ministat"><span className="mi" style={{ background: 'var(--pink-soft)' }}>👣</span><div><span>{t('walk.steps')}</span><b className="num" data-testid="walk-today-steps">{nf(todaySteps)}</b></div></div>
+        <div className="ministat"><span className="mi" style={{ background: 'var(--accent-soft)' }}>👣</span><div><span>{t('walk.steps')}</span><b className="num" data-testid="walk-today-steps">{nf(todaySteps)}</b></div></div>
         <div className="ministat"><span className="mi" style={{ background: 'var(--green-soft)' }}>🔥</span><div><span>{t('walk.burned')}</span><b className="num" data-testid="walk-today-kcal">{nf(todayKcal)} kcal</b></div></div>
       </div>
       <p className="tiny muted">{t('walk.kcalNote')}</p>
       <p className="small muted">{t('walk.kind')}</p></section>
-    <section className="card"><h2>{t('common.last7')}</h2><div className="chart"><ResponsiveContainer><BarChart data={week}><CartesianGrid vertical={false} stroke="var(--line)" /><XAxis dataKey="d" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} width={30} /><Tooltip /><ReferenceLine y={goal} stroke="var(--pink)" strokeDasharray="4 4" /><RBar dataKey="min" fill="var(--green)" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></div></section>
+    <section className="card"><h2>{t('common.last7')}</h2><div className="chart"><ResponsiveContainer><BarChart data={week}><CartesianGrid vertical={false} stroke="var(--line)" /><XAxis dataKey="d" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} width={30} /><Tooltip /><ReferenceLine y={goal} stroke="var(--accent)" strokeDasharray="4 4" /><RBar dataKey="min" fill="var(--green)" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></div></section>
     <section className="card stack"><h2>{t('walk.manual')}</h2>
       <div className="grid2"><label className="field">{t('walk.minutes')}<input type="number" value={manual} onChange={e => setManual(e.target.value)} /></label>
         <label className="field">{t('walk.steps')}<input type="number" value={steps} onChange={e => setSteps(e.target.value)} /></label></div>

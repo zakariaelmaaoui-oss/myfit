@@ -4,8 +4,8 @@ import { useApp } from '../lib/app';
 import { useI18n } from '../lib/i18n';
 import { isoDate, lastNDays } from '../lib/nutrition';
 import { activityKcal, workoutKcal } from '../lib/activity';
-import { CATS, EXERCISES, REST_MET, TIPS, WORKOUTS, getExercise, getWorkout, tx, type Cat, type Exercise } from '../data/sport';
-import { Bar, Empty, Icon, Modal, Page, errMsg } from '../components/ui';
+import { CATS, EXERCISES, REST_MET, TIPS, WORKOUTS, WTAGS, getExercise, getWorkout, tx, type Cat, type Exercise, type WTag } from '../data/sport';
+import { Empty, Icon, Modal, Page, errMsg } from '../components/ui';
 
 const isSport = (a: any) => a.kind === 'workout' || a.kind === 'exercise';
 const blockMet = (ex: string) => (ex === 'rest' ? REST_MET : getExercise(ex)?.met ?? 3);
@@ -18,37 +18,46 @@ export function SportHub() {
   const burnedToday = todays.reduce((s, a) => s + (Number(a.kcal_burned) || 0), 0);
   const week = lastNDays(7);
   const sportWeek = data.activity_logs.filter(a => isSport(a) && week.includes(a.date));
-  const [ex, setEx] = useState<Exercise | null>(null); const [cat, setCat] = useState<'all' | Cat>('all'); const [q, setQ] = useState('');
+  const [ex, setEx] = useState<Exercise | null>(null); const [cat, setCat] = useState<'all' | Cat>('all'); const [q, setQ] = useState(''); const [lim, setLim] = useState(12);
   const norm = (x: string) => x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const exList = EXERCISES.filter(e => (cat === 'all' || e.cat === cat) && (!q || norm([e.name.en, e.name.fr, e.name.ar, e.name.dar ?? ''].join(' ')).includes(norm(q))));
   const history = [...data.activity_logs].filter(isSport).sort((a, b) => (b.created_at ?? b.date).localeCompare(a.created_at ?? a.date)).slice(0, 15);
   const nameOf = (a: any) => a.kind === 'workout' ? (getWorkout(a.source) ? tx(getWorkout(a.source)!.name, lang) : t('sport.workout')) : (getExercise(a.source) ? tx(getExercise(a.source)!.name, lang) : t('sport.exercise'));
-  return <Page title={t('nav.sport')}>
-    <section className="sporthero">
-      <div className="grow"><span className="small">{t('sport.burnedToday')}</span><b className="statbig" data-testid="sport-burned">{nf(burnedToday)}<small>kcal</small></b>
-        <span className="tiny">{t('sport.weekSummary', { n: sportWeek.length, m: nf(sportWeek.reduce((s, a) => s + Number(a.minutes), 0)) })}</span></div>
-      <span className="sportemoji">🏋️‍♀️</span>
+  const [tag, setTag] = useState<'all' | WTag>('all');
+  const wList = WORKOUTS.filter(w => (tag === 'all' || w.tag === tag) && (!q || norm([w.name.en, w.name.fr, w.name.ar, w.name.dar ?? ''].join(' ')).includes(norm(q))));
+  return <Page title={t('sport.workoutsTitle')}>
+    <div className="row" style={{ gap: 10 }}>
+      <div className="searchbox grow"><Icon n="search" s={18} /><input placeholder={t('sport.searchPh')} aria-label={t('sport.searchPh')} value={q} onChange={e => setQ(e.target.value)} /><Icon n="settings" s={18} /></div>
+      <Link to="/coach" className="limebtn" aria-label={t('coach.title')}>✨</Link>
+    </div>
+    <section className="sporthero compact">
+      <span className="sportemoji">🔥</span>
+      <div className="grow"><span className="tiny">{t('sport.burnedToday')}</span><b className="statbig" data-testid="sport-burned">{nf(burnedToday)}<small>kcal</small></b>
+        <span className="tiny muted">{t('sport.weekSummary', { n: sportWeek.length, m: nf(sportWeek.reduce((s2, a) => s2 + Number(a.minutes), 0)) })}</span></div>
     </section>
 
-    <div className="row between"><h2>{t('sport.workouts')}</h2></div>
-    <div className="stack" data-testid="workouts">{WORKOUTS.map(w => {
+    <h2>{t('sport.category')}</h2>
+    <div className="chips scroll-x" style={{ flexWrap: 'nowrap' }}>{(['all', ...WTAGS] as const).map(c => <button key={c} className={`chip ${tag === c ? 'on' : ''}`} onClick={() => setTag(c)}>{t('sport.tag.' + c)}</button>)}</div>
+    <div className="stack" data-testid="workouts">{wList.map(w => {
       const est = workoutKcal(w.blocks.map(b => ({ met: blockMet(b.ex), sec: b.sec })), kg);
-      return <Link key={w.id} to={`/sport/workout/${w.id}`} className="workoutcard">
-        <span className="thumb">{w.emoji}</span>
-        <div className="grow" style={{ minWidth: 0 }}><b>{tx(w.name, lang)}</b><span className="small muted" style={{ display: 'block' }}>{tx(w.desc, lang)}</span>
-          <div className="row wrap" style={{ gap: 6, marginTop: 6 }}><span className="badge lav">≈ {nf(est.kcal)} kcal</span><span className="badge beige">{t('sport.level' + w.level)}</span>
-            <span className="badge">{t(w.impact === 'low' ? 'sport.lowImpact' : 'sport.highImpact')}</span></div></div>
-        <span className="coachgo"><Icon n="play" s={16} /></span></Link>;
-    })}</div>
+      const mins = Math.round(w.blocks.reduce((a2, b2) => a2 + b2.sec, 0) / 60);
+      return <Link key={w.id} to={`/sport/workout/${w.id}`} className="wcard">
+        <span className="wtag">{t('sport.tag.' + (w.tag ?? 'fullbody'))}</span>
+        <span className="wemoji" aria-hidden="true">{w.emoji}</span>
+        <b className="wtitle">{tx(w.name, lang).split(' · ')[0]}</b>
+        <span className="wmeta"><span>⏱ {mins} {t('unit.min')}</span><span>📶 {t('sport.level' + w.level)}</span><span>🔥 ≈ {nf(est.kcal)} kcal</span></span>
+        <span className="wgo"><Icon n="next" s={18} className="flip" /></span>
+      </Link>;
+    })}{!wList.length && <Empty>{t('recipe.none')}</Empty>}</div>
 
     <Link to="/sport/tips" className="coachcard"><span className="coachavatar">💡</span><div className="grow"><b>{t('sport.tipsTitle')}</b><span className="small">{t('sport.tipsText')}</span></div><span className="coachgo"><Icon n="next" s={18} className="flip" /></span></Link>
 
     <section className="card"><h2>{t('sport.library')} <span className="badge lav">{EXERCISES.length}</span></h2><p className="tiny muted">{t('sport.per10', { kg: nf(kg, 1) })}</p>
-      <input placeholder={t('sport.searchPh')} aria-label={t('sport.searchPh')} value={q} onChange={e => setQ(e.target.value)} style={{ marginTop: 10 }} />
       <div className="chips scroll-x" style={{ flexWrap: 'nowrap', margin: '10px 0 4px' }}>{(['all', ...CATS] as const).map(c => <button key={c} className={`chip ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>{t('sport.cat.' + c)}</button>)}</div>
-      <div className="list" data-testid="exercises">{exList.map(e => <button key={e.id} className="li" style={{ background: 'none', border: 0, borderBottom: '1px solid var(--line)', cursor: 'pointer', width: '100%', textAlign: 'start' }} onClick={() => setEx(e)}>
+      <div className="list" data-testid="exercises">{exList.slice(0, q ? 99 : lim).map(e => <button key={e.id} className="li" style={{ background: 'none', border: 0, borderBottom: '1px solid var(--line)', cursor: 'pointer', width: '100%', textAlign: 'start' }} onClick={() => setEx(e)}>
         <span className="thumb sm">{e.emoji}</span><span className="grow"><b>{tx(e.name, lang)}</b><span className="tiny muted" style={{ display: 'block' }}>{t(e.impact === 'low' ? 'sport.lowImpact' : 'sport.highImpact')} · MET {e.met}</span></span>
-        <b className="num small" style={{ color: 'var(--pink-strong)' }}>{nf(activityKcal(e.met, kg, 10))} kcal</b></button>)}</div>{!exList.length && <Empty>{t('recipe.none')}</Empty>}</section>
+        <b className="num small" style={{ color: 'var(--accent-strong)' }}>{nf(activityKcal(e.met, kg, 10))} kcal</b></button>)}</div>{!exList.length && <Empty>{t('recipe.none')}</Empty>}
+      {!q && exList.length > lim && <button className="btn ghost block" onClick={() => setLim(lim + 20)}>{t('common.showMore')} ({exList.length - lim})</button>}</section>
 
     <section className="card"><h2>{t('sport.history')}</h2>{history.length ? <div className="list">{history.map(a => <div className="li" key={a.id}>
       <span className="grow">{nameOf(a)}<span className="tiny muted" style={{ display: 'block' }}>{df(a.date)} · {nf(a.minutes, 1)} {t('unit.min')} · {nf(a.kcal_burned ?? 0)} kcal</span></span>
@@ -117,11 +126,12 @@ export function WorkoutPlayer() {
       <span className="timer">{String(Math.floor(left / 60)).padStart(2, '0')}:{String(left % 60).padStart(2, '0')}</span>
       {!isRest && <p className="small muted">{tx(exo!.how, lang)}</p>}
       {next && <p className="small"><b>{t('sport.next')}:</b> {next.ex === 'rest' ? t('sport.rest') : `${nextEx?.emoji} ${tx(nextEx!.name, lang)}`}</p>}
-      <div style={{ width: '100%' }}><Bar value={doneSec} max={totalSec} /></div>
+      <div className="slimline"><i style={{ width: `${totalSec ? Math.min(100, (doneSec / totalSec) * 100) : 0}%` }} /></div>
       <p className="small">🔥 {nf(progress().kcal)} kcal · {nf(doneSec / 60, 1)} / {nf(totalSec / 60)} {t('unit.min')}</p>
-      {finished ? <button className="btn primary" onClick={save}>{t('sport.save')}</button> : <div className="row">
-        <button className="btn primary" onClick={() => setRunning(!running)}><Icon n={running ? 'pause' : 'play'} s={18} />{running ? t('sport.pause') : doneSec ? t('sport.resume') : t('common.start')}</button>
-        <button className="iconbtn" aria-label={t('sport.skip')} onClick={() => { if (idx + 1 < w.blocks.length) { setIdx(idx + 1); setLeft(w.blocks[idx + 1].sec); } else { setRunning(false); setFinished(true); } }}><Icon n="next" s={18} className="flip" /></button>
+      {finished ? <button className="btn primary" onClick={save}>{t('sport.save')}</button> : <div className="controls">
+        <button className="ctl" aria-label={t('common.prev')} disabled={idx === 0} onClick={() => { if (idx > 0) { setIdx(idx - 1); setLeft(w.blocks[idx - 1].sec); } }}><Icon n="back" s={20} className="flip" /></button>
+        <button className="playbtn" data-testid="playbtn" aria-label={running ? t('sport.pause') : t('common.start')} onClick={() => setRunning(!running)}><Icon n={running ? 'pause' : 'play'} s={26} sw={2.4} /></button>
+        <button className="ctl" aria-label={t('sport.skip')} onClick={() => { if (idx + 1 < w.blocks.length) { setIdx(idx + 1); setLeft(w.blocks[idx + 1].sec); } else { setRunning(false); setFinished(true); } }}><Icon n="next" s={20} className="flip" /></button>
       </div>}
       {doneSec > 0 && !finished && <button className="btn ghost sm" onClick={save}>{t('sport.finishSave')}</button>}
     </section>

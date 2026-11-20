@@ -23,7 +23,7 @@ describe('translations', () => {
     ...MOODS.map(k => 'mood.' + k), ...['physical', 'emotional', 'craving'].map(k => 'cat3.' + k),
     ...['morning', 'afternoon', 'evening', 'night'].map(k => 'journal.' + k), ...['in', 'hold', 'out', 'hold2'].map(k => 'breath.' + k),
     ...['water', 'walk', 'meals', 'mealprep', 'habits', 'report'].map(k => 'notif.type.' + k), ...['hips_cm', 'chest_cm', 'arm_cm', 'thigh_cm'].map(k => 'weight.' + k),
-    ...['all', 'cardio', 'strength', 'core', 'flex', 'daily'].map(k => 'sport.cat.' + k), ...[1, 2, 3].map(k => 'sport.level' + k),
+    ...['all', 'cardio', 'strength', 'core', 'flex', 'daily'].map(k => 'sport.cat.' + k), ...[1, 2, 3].map(k => 'sport.level' + k), ...['all', 'fullbody', 'strength', 'core', 'cardio', 'flex'].map(k => 'sport.tag.' + k), ...['kcal', 'burned', 'minutes'].map(k => 'stats.metric.' + k),
     'home.morning', 'home.afternoon', 'home.evening', 'diary.updated',
   ];
   it('every key used exists in en, fr and ar', () => {

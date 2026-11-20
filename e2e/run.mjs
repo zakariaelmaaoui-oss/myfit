@@ -143,8 +143,8 @@ await step('water + walking', async () => {
 
 await step('sport: exercises, workouts, tips', async () => {
   await go('/sport');
-  ok((await page.locator('[data-testid=workouts] > a').count()) === 11, '11 guided workouts listed');
-  ok((await page.locator('[data-testid=exercises] .li').count()) >= 60, 'exercise library listed (60+)');
+  ok((await page.locator('[data-testid=workouts] > a.wcard').count()) === 11, '11 guided workouts listed');
+  ok((await page.locator('[data-testid=exercises] .li').count()) >= 12, 'exercise library listed');
   const before = Number((await page.textContent('[data-testid=sport-burned]')).replace(/[^\d]/g, ''));
   await page.click('[data-testid=exercises] button:has-text("Jump rope")');
   ok((await text()).includes('MET 11.8'), 'exercise shows how-to and MET');
@@ -154,9 +154,9 @@ await step('sport: exercises, workouts, tips', async () => {
   ok(after - before >= 140 && after - before <= 150, `logged exercise adds burned calories (+${after - before} kcal)`);
   ok((await text()).includes('Jump rope'), 'session appears in history');
   await page.click('[data-testid=workouts] a >> nth=0');
-  await page.click('[data-testid=player] button:has-text("Start")'); await page.waitForTimeout(2300);
+  await page.click('[data-testid=playbtn]'); await page.waitForTimeout(2300);
   ok(/00:5[78]/.test(await page.textContent('[data-testid=player]')), 'workout timer counts down');
-  await page.click('[data-testid=player] button:has-text("Pause")');
+  await page.click('[data-testid=playbtn]');
   await go('/sport/tips'); ok((await page.locator('section.card').count()) === 10, '10 tips shown');
   await go('/'); ok((await page.textContent('[data-testid=home-burned]')).match(/\d{3} kcal/), 'home burned includes sport');
 });

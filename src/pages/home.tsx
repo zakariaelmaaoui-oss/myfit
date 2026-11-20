@@ -6,7 +6,7 @@ import { addDays, isoDate, startOfWeek, sumNutrients } from '../lib/nutrition';
 import { foodName, getFood, type Food } from '../lib/foods';
 import { getRecipe } from '../data/recipes';
 import { foodEmoji, recipeEmoji } from '../lib/emoji';
-import { Donut, Icon, Page, Ring, useFmt } from '../components/ui';
+import { Donut, Gauge, Icon, Page, useFmt } from '../components/ui';
 import { AddFoodFlow, AddFoodSheet, MEALS, type MealSlot } from '../components/FoodPicker';
 
 const TOP_FRUITS = ['orange', 'strawberry', 'kiwi', 'mango', 'banana', 'apple', 'grapes', 'pineapple', 'pomegranate', 'dates_medjool', 'watermelon', 'fig'];
@@ -45,11 +45,11 @@ export function Home() {
     <Link to="/progress" className="weekcard" aria-label={t('home.weeklyProgress')}>
       <div className="grow"><span className="pill"><i>⚡</i>{t('home.dailyIntake')}</span><h2>{t('home.weeklyProgress')}</h2>
         <p className="tiny" style={{ marginTop: 6, opacity: .8 }}>{t('home.daysLogged', { n: loggedDays })}</p></div>
-      <div className="ringwrap"><Ring value={loggedDays} max={7} size={92} stroke={10} color="var(--pink)"><b style={{ fontSize: '1.4rem', lineHeight: 1 }}>{loggedDays}</b><span className="tiny">{t('home.days')}</span></Ring></div>
+      <Gauge value={loggedDays} max={7} size={118} ticks={24}><b style={{ fontSize: '1.5rem' }}>{loggedDays}</b><span className="tiny muted">/ 7 {t('home.days')}</span></Gauge>
     </Link>
 
     <div className="grid2">
-      <Link to="/wellness/walk" className="metric"><div className="top"><span>{t('home.stepsTitle')}</span><span className="mi" style={{ background: 'var(--pink-soft)' }}>👣</span></div>
+      <Link to="/wellness/walk" className="metric"><div className="top"><span>{t('home.stepsTitle')}</span><span className="mi" style={{ background: 'var(--accent-soft)' }}>👣</span></div>
         {steps > 0 ? <span className="val">{nf(steps)}<small>{t('walk.stepsShort')}</small></span> : <span className="val">{nf(walkMin)}<small>{t('unit.min')} / {profile?.walk_goal_min ?? 30}</small></span>}
         <span className="tiny muted" data-testid="home-burned">🔥 {nf(burned)} kcal {t('home.burned')}</span></Link>
       <Link to="/wellness/water" className="metric"><div className="top"><span>{t('home.drinkWater')}</span><span className="mi" style={{ background: 'var(--sky-soft)' }}>💧</span></div>

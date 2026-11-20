@@ -159,3 +159,45 @@ export function Donut({ parts, size = 150, stroke = 18, children }: { parts: { v
     <div className="rl">{children}</div>
   </div>;
 }
+
+/** Segmented arc gauge (ticks), e.g. "86 % of target". */
+export function Gauge({ value, max, size = 150, ticks = 30, children }: { value: number; max: number; size?: number; ticks?: number; children?: ReactNode }) {
+  const pct = max > 0 ? Math.max(0, Math.min(1, value / max)) : 0; const on = Math.round(pct * ticks);
+  const cx = size / 2, cy = size / 2, r2 = size / 2 - 4, r1 = r2 - size * 0.13; const start = 200, sweep = 220;
+  return <div className="gauge" style={{ width: size, height: size * 0.82 }}>
+    <svg width={size} height={size * 0.82} viewBox={`0 0 ${size} ${size * 0.82}`} aria-hidden="true">{Array.from({ length: ticks }, (_, i) => {
+      const a = ((start - (sweep * i) / (ticks - 1)) * Math.PI) / 180; const c = Math.cos(a), s = Math.sin(a);
+      const lit = i < on; const mix = ticks > 1 ? i / (ticks - 1) : 1;
+      return <line key={i} x1={cx + r1 * c} y1={cy - r1 * s} x2={cx + r2 * c} y2={cy - r2 * s} strokeWidth={size * 0.035} strokeLinecap="round"
+        stroke={lit ? `color-mix(in srgb, var(--accent-strong) ${Math.round(45 + mix * 55)}%, var(--accent))` : 'var(--line)'} />;
+    })}</svg>
+    <div className="gl">{children}</div>
+  </div>;
+}
+
+/** Smooth area chart with a highlighted selected point (pill + value bubble). */
+export function AreaChart({ values, labels, selected, onSelect, unit = '' }: { values: number[]; labels: string[]; selected: number; onSelect?: (i: number) => void; unit?: string }) {
+  const W = 320, H = 150, P = 14, top = 26, bottom = H - 10;
+  const max = Math.max(1, ...values) * 1.15; const n = values.length;
+  const x = (i: number) => P + (i * (W - 2 * P)) / Math.max(1, n - 1); const y = (v: number) => bottom - (v / max) * (bottom - top);
+  const pts = values.map((v, i) => [x(i), y(v)] as const);
+  let d = `M ${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 0; i < n - 1; i++) {
+    const [x0, y0] = pts[Math.max(0, i - 1)], [x1, y1] = pts[i], [x2, y2] = pts[i + 1], [x3, y3] = pts[Math.min(n - 1, i + 2)];
+    d += ` C ${x1 + (x2 - x0) / 6} ${y1 + (y2 - y0) / 6}, ${x2 - (x3 - x1) / 6} ${y2 - (y3 - y1) / 6}, ${x2} ${y2}`;
+  }
+  const area = `${d} L ${pts[n - 1][0]} ${bottom} L ${pts[0][0]} ${bottom} Z`;
+  const sx = x(selected), sy = y(values[selected] ?? 0);
+  return <div className="areachart">
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: 170 }} aria-hidden="true">
+      <defs><linearGradient id="agrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--accent)" stopOpacity=".75" /><stop offset="100%" stopColor="var(--accent)" stopOpacity=".05" /></linearGradient></defs>
+      {[0.25, 0.5, 0.75].map(f => <line key={f} x1={P} x2={W - P} y1={top + (bottom - top) * f} y2={top + (bottom - top) * f} stroke="var(--line)" strokeDasharray="3 4" strokeWidth=".8" />)}
+      <rect x={sx - 11} y={sy - 6} width={22} height={bottom - sy + 6} rx={11} fill="var(--accent-strong)" opacity=".9" />
+      <path d={area} fill="url(#agrad)" /><path d={d} fill="none" stroke="var(--accent-strong)" strokeWidth="2.2" />
+      {pts.map(([px, py], i) => <circle key={i} cx={px} cy={py} r={i === selected ? 4.5 : 3} fill={i === selected ? '#fff' : 'var(--accent-strong)'} stroke="var(--accent-strong)" strokeWidth="2" />)}
+      <g transform={`translate(${Math.min(W - 36, Math.max(36, sx))} ${Math.max(12, sy - 16)})`}><rect x={-30} y={-11} width={60} height={20} rx={10} fill="var(--accent-strong)" />
+        <text x={0} y={3} textAnchor="middle" fontSize="10" fontWeight="700" fill="#fff">{Math.round(values[selected] ?? 0)}{unit}</text></g>
+    </svg>
+    <div className="axis">{labels.map((l, i) => <button key={i} className={i === selected ? 'on' : ''} onClick={() => onSelect?.(i)}>{l}</button>)}</div>
+  </div>;
+}
