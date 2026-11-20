@@ -40,8 +40,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const { data: subs } = await db.from('push_subscriptions').select('id,endpoint,p256dh,auth').eq('user_id', u.id);
     if (!subs?.length) return;
     const { data: profile } = await db.from('profiles').select('name,language,goal,age,pregnant,breastfeeding,medical_supervision,eating_disorder_history,walk_goal_min').eq('id', u.id).maybeSingle();
-    const lang = (profile?.language as string) || 'en';
-    let body = FALLBACK[lang] ?? FALLBACK.en;
+    let body = FALLBACK.ar;
     if (ai && u.consent) {
       const [{ data: diary }, { data: water }, { data: acts }, { data: goal }] = await Promise.all([
         db.from('diary_entries').select('meal,kcal,added_sugar').eq('user_id', u.id).eq('date', yesterday),
@@ -60,7 +59,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         const req = (model: string) => ai.chat.completions.create({
           model, max_completion_tokens: 200, temperature: 0.6,
           messages: [
-            { role: 'system', content: `You write one short morning push notification for the MyFit nutrition app. Language: ${lang === 'dar' ? 'Moroccan Darija in Arabic script' : lang === 'ar' ? 'Arabic' : lang === 'fr' ? 'French' : 'English'}. Max 160 characters, warm, specific to the data, one concrete tip for today (food, water or walking). No guilt, no shaming, never suggest eating less to compensate, skipping meals or burning calories off. If individual_guidance_needed is true, do not mention weight loss or calorie targets. If no meals were logged, just encourage gently. Output only the message text, without quotes.` },
+            { role: 'system', content: `You write one short morning push notification for the MyFit nutrition app. Language: Arabic (simple Modern Standard Arabic, Arabic script). Max 160 characters, warm, specific to the data, one concrete tip for today (food, water or walking). No guilt, no shaming, never suggest eating less to compensate, skipping meals or burning calories off. If individual_guidance_needed is true, do not mention weight loss or calorie targets. If no meals were logged, just encourage gently. Output only the message text, without quotes.` },
             { role: 'user', content: JSON.stringify(facts) },
           ],
         });

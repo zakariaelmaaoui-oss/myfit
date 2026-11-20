@@ -81,8 +81,8 @@ export function Coach() {
   return <Page title={t('coach.title')} back actions={history.length ? <button className="iconbtn" aria-label={t('coach.clear')} onClick={async () => { await removeWhere('ai_messages', 'role', 'user'); await removeWhere('ai_messages', 'role', 'assistant'); toast(t('coach.cleared'), 'ok'); }}><Icon n="trash" s={18} /></button> : undefined}>
     <div className="chat" data-testid="chat">
       {!history.length && !pending && <section className="card coachhero stack"><span className="coachavatar">✨</span><h2>{t('coach.hello', { name: ctx.profile?.name ?? '' })}</h2><p className="small">{t('coach.helloText')}</p></section>}
-      {history.map(m => <div key={m.id} className={`bubble ${m.role === 'user' ? 'me' : 'bot'}`}>{m.content}</div>)}
-      {pending && <><div className="bubble me">{pending.q}</div><div className="bubble bot" aria-live="polite">{pending.a || <span className="typing"><i /><i /><i /></span>}</div></>}
+      {history.map(m => <div key={m.id} dir="auto" className={`bubble ${m.role === 'user' ? 'me' : 'bot'}`}>{m.content}</div>)}
+      {pending && <><div className="bubble me" dir="auto">{pending.q}</div><div className="bubble bot" dir="auto" aria-live="polite">{pending.a || <span className="typing"><i /><i /><i /></span>}</div></>}
       <div ref={end} />
     </div>
     {err && <p className="err" role="alert">{err}</p>}

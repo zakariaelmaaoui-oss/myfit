@@ -143,8 +143,8 @@ await step('water + walking', async () => {
 
 await step('sport: exercises, workouts, tips', async () => {
   await go('/sport');
-  ok((await page.locator('[data-testid=workouts] > a').count()) === 5, '5 guided workouts listed');
-  ok((await page.locator('[data-testid=exercises] .li').count()) >= 15, 'exercise library listed');
+  ok((await page.locator('[data-testid=workouts] > a').count()) === 11, '11 guided workouts listed');
+  ok((await page.locator('[data-testid=exercises] .li').count()) >= 60, 'exercise library listed (60+)');
   const before = Number((await page.textContent('[data-testid=sport-burned]')).replace(/[^\d]/g, ''));
   await page.click('[data-testid=exercises] button:has-text("Jump rope")');
   ok((await text()).includes('MET 11.8'), 'exercise shows how-to and MET');

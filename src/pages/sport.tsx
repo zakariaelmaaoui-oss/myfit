@@ -4,7 +4,7 @@ import { useApp } from '../lib/app';
 import { useI18n } from '../lib/i18n';
 import { isoDate, lastNDays } from '../lib/nutrition';
 import { activityKcal, workoutKcal } from '../lib/activity';
-import { EXERCISES, REST_MET, TIPS, WORKOUTS, getExercise, getWorkout, tx, type Exercise } from '../data/sport';
+import { CATS, EXERCISES, REST_MET, TIPS, WORKOUTS, getExercise, getWorkout, tx, type Cat, type Exercise } from '../data/sport';
 import { Bar, Empty, Icon, Modal, Page, errMsg } from '../components/ui';
 
 const isSport = (a: any) => a.kind === 'workout' || a.kind === 'exercise';
@@ -18,7 +18,9 @@ export function SportHub() {
   const burnedToday = todays.reduce((s, a) => s + (Number(a.kcal_burned) || 0), 0);
   const week = lastNDays(7);
   const sportWeek = data.activity_logs.filter(a => isSport(a) && week.includes(a.date));
-  const [ex, setEx] = useState<Exercise | null>(null);
+  const [ex, setEx] = useState<Exercise | null>(null); const [cat, setCat] = useState<'all' | Cat>('all'); const [q, setQ] = useState('');
+  const norm = (x: string) => x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const exList = EXERCISES.filter(e => (cat === 'all' || e.cat === cat) && (!q || norm([e.name.en, e.name.fr, e.name.ar, e.name.dar ?? ''].join(' ')).includes(norm(q))));
   const history = [...data.activity_logs].filter(isSport).sort((a, b) => (b.created_at ?? b.date).localeCompare(a.created_at ?? a.date)).slice(0, 15);
   const nameOf = (a: any) => a.kind === 'workout' ? (getWorkout(a.source) ? tx(getWorkout(a.source)!.name, lang) : t('sport.workout')) : (getExercise(a.source) ? tx(getExercise(a.source)!.name, lang) : t('sport.exercise'));
   return <Page title={t('nav.sport')}>
@@ -41,10 +43,12 @@ export function SportHub() {
 
     <Link to="/sport/tips" className="coachcard"><span className="coachavatar">💡</span><div className="grow"><b>{t('sport.tipsTitle')}</b><span className="small">{t('sport.tipsText')}</span></div><span className="coachgo"><Icon n="next" s={18} className="flip" /></span></Link>
 
-    <section className="card"><h2>{t('sport.library')}</h2><p className="tiny muted">{t('sport.per10', { kg: nf(kg, 1) })}</p>
-      <div className="list" data-testid="exercises">{EXERCISES.map(e => <button key={e.id} className="li" style={{ background: 'none', border: 0, borderBottom: '1px solid var(--line)', cursor: 'pointer', width: '100%', textAlign: 'start' }} onClick={() => setEx(e)}>
+    <section className="card"><h2>{t('sport.library')} <span className="badge lav">{EXERCISES.length}</span></h2><p className="tiny muted">{t('sport.per10', { kg: nf(kg, 1) })}</p>
+      <input placeholder={t('sport.searchPh')} aria-label={t('sport.searchPh')} value={q} onChange={e => setQ(e.target.value)} style={{ marginTop: 10 }} />
+      <div className="chips scroll-x" style={{ flexWrap: 'nowrap', margin: '10px 0 4px' }}>{(['all', ...CATS] as const).map(c => <button key={c} className={`chip ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>{t('sport.cat.' + c)}</button>)}</div>
+      <div className="list" data-testid="exercises">{exList.map(e => <button key={e.id} className="li" style={{ background: 'none', border: 0, borderBottom: '1px solid var(--line)', cursor: 'pointer', width: '100%', textAlign: 'start' }} onClick={() => setEx(e)}>
         <span className="thumb sm">{e.emoji}</span><span className="grow"><b>{tx(e.name, lang)}</b><span className="tiny muted" style={{ display: 'block' }}>{t(e.impact === 'low' ? 'sport.lowImpact' : 'sport.highImpact')} · MET {e.met}</span></span>
-        <b className="num small" style={{ color: 'var(--pink-strong)' }}>{nf(activityKcal(e.met, kg, 10))} kcal</b></button>)}</div></section>
+        <b className="num small" style={{ color: 'var(--pink-strong)' }}>{nf(activityKcal(e.met, kg, 10))} kcal</b></button>)}</div>{!exList.length && <Empty>{t('recipe.none')}</Empty>}</section>
 
     <section className="card"><h2>{t('sport.history')}</h2>{history.length ? <div className="list">{history.map(a => <div className="li" key={a.id}>
       <span className="grow">{nameOf(a)}<span className="tiny muted" style={{ display: 'block' }}>{df(a.date)} · {nf(a.minutes, 1)} {t('unit.min')} · {nf(a.kcal_burned ?? 0)} kcal</span></span>

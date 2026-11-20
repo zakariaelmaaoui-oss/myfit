@@ -22,7 +22,7 @@ async function pickModel(groq: Groq, exclude: string[] = []): Promise<string> {
 }
 const isModelError = (e: unknown) => e instanceof Groq.NotFoundError || (e instanceof Groq.BadRequestError && /model/i.test(e.message));
 const DAILY_LIMIT = 40;
-const LANG_NAME: Record<string, string> = { en: 'English', fr: 'French', ar: 'Modern Standard Arabic', dar: 'Moroccan Darija (write it the way the user writes it: Arabic script or Latin letters/numbers like "3" and "7")' };
+// The coach always answers in Arabic (owner's choice), whatever language the user writes in.
 
 const SYSTEM = `You are MyFit Coach, the friendly nutrition and healthy-lifestyle coach inside the MyFit app (users are mostly in Morocco; many prefer Moroccan dishes, local markets and a modest budget).
 
@@ -64,7 +64,6 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
   let body: any; try { body = await readBody(req); } catch { return send(res, 400, { error: 'bad_json' }); }
   const message = typeof body?.message === 'string' ? body.message.trim() : '';
   if (!message || message.length > 2000) return send(res, 400, { error: 'bad_message' });
-  const lang = ['en', 'fr', 'ar', 'dar'].includes(body?.lang) ? body.lang : 'en';
   const context = JSON.stringify(body?.context ?? {}).slice(0, 6000);
 
   const { data: prefs } = await sb.from('user_preferences').select('coach_consent').eq('id', user.id).maybeSingle();
@@ -86,7 +85,7 @@ export default async function handler(req: IncomingMessage & { body?: unknown },
 
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const chat = [
-    { role: 'system' as const, content: `${SYSTEM}\n\nReply in ${LANG_NAME[lang]} unless the user clearly writes in another language; then reply in that language.\nToday: ${new Date().toISOString().slice(0, 10)}.\nUser data from the app (JSON):\n${context}` },
+    { role: 'system' as const, content: `${SYSTEM}\n\nAlways reply in Arabic (clear, simple Modern Standard Arabic; you may use familiar Moroccan words for foods), whatever language the user writes in — French, English, Darija in Latin letters or anything else. Understand Moroccan Darija written in Latin letters and numbers (3 = ع, 7 = ح, 9 = ق, 5 = خ). Write Arabic in Arabic script only.\nToday: ${new Date().toISOString().slice(0, 10)}.\nUser data from the app (JSON):\n${context}` },
     ...history,
     { role: 'user' as const, content: message },
   ];
