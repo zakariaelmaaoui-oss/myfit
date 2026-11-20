@@ -11,20 +11,18 @@ Food values, calculations, recipes, plans and reports come from verified food da
 | Calculator | BMR (Mifflin-St Jeor), TDEE, calorie target, protein/carbs/fat, fiber, fluids, added-sugar guidance. Moderate deficit only (≤ 500 kcal or 20 %, never below BMR / 1200 F / 1500 M). **No deficit** for under-18s, pregnancy, breastfeeding, medical supervision, eating-disorder history or BMI < 18.5 |
 | Food database | 211 foods from **USDA FoodData Central SR Legacy**, each with its FDC ID. Unknown values are shown as "unknown", never guessed. Users can correct values (saved as their own food) |
 | Diary | Breakfast, lunch, dinner, snacks, drinks. Add with grams or reference servings, edit, delete. Totals per meal and per day |
-| My Fridge | Pick ingredients by hand (no camera), with quantities and expiry dates → matching stored recipes, with what's missing |
 | Recipes | 50 stored recipes (36 Moroccan, plus variations): harira, bissara, zaalouk, taktouka, couscous, tagines, rfissa, msemen, baghrir, khobz, harcha… Nutrition is **calculated from the ingredient quantities**. Filters: lowest cost, high protein, low added sugar, vegetarian, Moroccan, quick, available ingredients, favourites |
 | Meal planner | Day and week views, choose / replace / remove meals, adjust portions, totals, record a planned meal in the diary, build a shopping list |
-| Shopping & budget | List by category, mark as bought, edit, remove. Budget in MAD. **No built-in prices**: costs use only prices the user enters |
 | Sugar tracker | Total, added and natural sugar; weekly and monthly views; list of high-added-sugar products; education; WHO 10 % / 5 % / custom guidance; gentle alerts |
-| Barcode | Open Food Facts lookup (optional), camera scanning where the browser supports BarcodeDetector, otherwise manual entry; marked "not verified" |
 | Emotional wellness | Hunger check-in (physical / emotional / craving), private journal, craving journal with weekly patterns, breathing exercises, 3-minute guided stress exercise, relaxation, tips, coping ideas. Suggests professional support after repeated loss-of-control or distress entries |
 | MyFit Coach (AI) | Chat through `api/coach.ts` using Groq (`llama-3.3-70b-versatile` by default; change with `GROQ_MODEL`). It sees a summary of the user's own data (today's meals, targets, water, walking; never free-text health notes), follows safety rules (no diagnosis, no extreme diets, no guilt), keeps 40 questions/day per user, and saves the conversation privately. A daily push message (`api/daily-coach.ts`, Vercel Cron 08:00 UTC) gives one tip based on yesterday |
 | Steps & calories burned | During a walk, the phone's motion sensor counts steps live (while MyFit is open); distance = steps × stride (height × 0.413/0.415); calories = MET (from walking speed, Compendium of Physical Activities) × weight × time. Without the sensor, MET 3.5 is assumed |
+| Budget | Budget in MAD and prices you enter yourself (no built-in prices); recipe cost and cheapest-protein table |
+| Sport | 5 guided workouts with a timer (HIIT, home strength, low-impact cardio, jump rope, dance), 19 exercises with how-to and calories for your weight (MET × kg × time), sessions history, tips to burn more. Saved as activities with calories burned |
 | Water / walking | 150 / 250 / 500 ml + custom amounts, adjustable goal, history. Walking timer (keeps running across pages), manual minutes and steps, goal, history |
 | Healthy drinks | 6 recipes with calculated values, and a clear note: no "detox" claims |
 | Weight | Weight, waist and other measurements, private photos, weekly and monthly averages, goal progress, note on daily fluctuations, pause option |
 | Reports | Weekly report from stored data only ("no data" when missing); nutrition and activity charts |
-| Sleep / cycle | Optional, off by default, need consent |
 | Notifications | Reminders (water, walking, meals, meal prep, habits, weekly report) at chosen times, quiet hours, inbox. Supportive over-target and added-sugar messages (can be turned off) |
 | Privacy | Consent for sensitive data, JSON export, full account deletion (rows and photos) |
 

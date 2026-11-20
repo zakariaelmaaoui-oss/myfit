@@ -10,18 +10,17 @@ import { Empty, Icon, NutrientTable, Page, Seg, errMsg } from '../components/ui'
 import { MOODS } from './tracking';
 
 export function WellnessHub() {
-  const { t, lang } = useI18n(); const { profile } = useApp();
+  const { t, lang } = useI18n();
   const tiles = [
-    { to: '/coach', i: 'smile', c: 't-green', k: 'coach' }, { to: '/wellness/checkin', i: 'heart', c: 't-rose', k: 'checkin' }, { to: '/wellness/journal', i: 'book', c: 't-lav', k: 'journal' },
+    { to: '/sport', i: 'flame', c: 't-rose', k: 'sport' }, { to: '/coach', i: 'smile', c: 't-green', k: 'coach' }, { to: '/wellness/checkin', i: 'heart', c: 't-rose', k: 'checkin' }, { to: '/wellness/journal', i: 'book', c: 't-lav', k: 'journal' },
     { to: '/wellness/stress', i: 'leaf', c: 't-green', k: 'stress' }, { to: '/wellness/breathing', i: 'wind', c: 't-sky', k: 'breathing' },
     { to: '/wellness/habits', i: 'check', c: 't-butter', k: 'habits' }, { to: '/wellness/drinks', i: 'cup', c: 't-peach', k: 'drinks' },
     { to: '/wellness/water', i: 'drop', c: 't-sky', k: 'water' }, { to: '/wellness/walk', i: 'walk', c: 't-peach', k: 'walk' },
-    { to: '/wellness/sleep', i: 'moon', c: 't-lav', k: 'sleep' }, { to: '/wellness/period', i: 'calendar', c: 't-rose', k: 'period' },
   ];
   return <Page title={t('nav.wellness')}>
     <div className="card hero"><b>{t('well.title')}</b><p className="small" style={{ marginTop: 6 }}>{t4(MSG.noGuilt, lang)}</p></div>
     <div className="grid2">{tiles.map(x => <Link key={x.to} to={x.to} className={`tile ${x.c}`}><span className="ti"><Icon n={x.i} /></span><b>{t('nav.' + x.k)}</b>
-      <span>{(x.k === 'sleep' && !profile?.enable_sleep) || (x.k === 'period' && !profile?.enable_period) ? t('common.optional') : t('hub.' + x.k)}</span></Link>)}</div>
+      <span>{t('hub.' + x.k)}</span></Link>)}</div>
   </Page>;
 }
 

@@ -82,15 +82,6 @@ await step('food database + portion calculation + diary', async () => {
   ok((await page.textContent('[data-testid=meal-lunch]')).includes('Nothing recorded'), 'entry deleted');
 });
 
-await step('custom food + unknown values', async () => {
-  await go('/food/custom');
-  await page.getByLabel('Name', { exact: true }).fill('Local yogurt drink');
-  await page.getByLabel('Energy').fill('70'); await page.getByLabel('Total sugar').fill('9');
-  await page.click('button:has-text("Save")');
-  ok((await text()).includes('Local yogurt drink'), 'custom food saved');
-  await go('/food/database'); await page.fill('input[aria-label="Search food"]', 'local yogurt');
-  ok((await page.textContent('[data-testid=food-results]')).includes('not verified'), 'custom food flagged not verified');
-});
 
 await step('recipes, Moroccan database, planner, shopping list', async () => {
   await go('/food/moroccan');
@@ -108,11 +99,6 @@ await step('recipes, Moroccan database, planner, shopping list', async () => {
   ok((await page.textContent('[data-testid=recipe-list]')).includes('Chicken'), 'high-protein filter works');
   await go('/food/planner');
   ok((await text()).includes('Harira'), 'planned meal appears in weekly planner');
-  await page.click('button:has-text("Generate shopping list")');
-  await go('/food/shopping');
-  const sh = await text(); ok(sh.includes('Lentils') && sh.includes('Tomatoes'), 'shopping list generated from plan');
-  await page.locator('input[type=checkbox]').first().check(); ok(await page.locator('input[type=checkbox]').first().isChecked(), 'mark purchased');
-  await page.screenshot({ path: `${SHOTS}/03-shopping.png`, fullPage: true });
 });
 
 await step('budget mode (user-entered prices only)', async () => {
@@ -123,17 +109,6 @@ await step('budget mode (user-entered prices only)', async () => {
   ok((await text()).includes('18 MAD/kg'), 'price saved');
 });
 
-await step('My Fridge matching', async () => {
-  await go('/food/fridge');
-  for (const q of ['egg, whole, raw', 'potatoes, raw', 'tomatoes, raw', 'onions, raw']) {
-    await page.click('button:has-text("Add")'); await page.fill('.sheet input[aria-label="Search food"]', q);
-    await page.click('.sheet [data-testid=food-results] button >> nth=0'); await page.click('.sheet button:has-text("Add")'); await page.waitForTimeout(150);
-  }
-  ok((await page.locator('[data-testid=fridge-list] .li').count()) === 4, '4 ingredients in fridge');
-  const m = await page.textContent('[data-testid=fridge-matches]');
-  ok(m.includes('Potato, tomato & onion skillet with eggs') && m.includes('100%'), 'eggs+potatoes+tomatoes+onions → matching recipe at 100%');
-  await page.screenshot({ path: `${SHOTS}/04-fridge.png`, fullPage: true });
-});
 
 await step('sugar tracker', async () => {
   await go('/food/sugar');
@@ -166,6 +141,26 @@ await step('water + walking', async () => {
   ok(await page.isVisible('[data-testid=coach-card]') === false, 'coach page reachable');
 });
 
+await step('sport: exercises, workouts, tips', async () => {
+  await go('/sport');
+  ok((await page.locator('[data-testid=workouts] > a').count()) === 5, '5 guided workouts listed');
+  ok((await page.locator('[data-testid=exercises] .li').count()) >= 15, 'exercise library listed');
+  const before = Number((await page.textContent('[data-testid=sport-burned]')).replace(/[^\d]/g, ''));
+  await page.click('[data-testid=exercises] button:has-text("Jump rope")');
+  ok((await text()).includes('MET 11.8'), 'exercise shows how-to and MET');
+  await page.fill('.sheet input[type=number]', '10'); await page.click('.sheet button:has-text("Save this exercise")'); await page.waitForTimeout(300);
+  const after = Number((await page.textContent('[data-testid=sport-burned]')).replace(/[^\d]/g, ''));
+  // 11.8 MET × ~74.4 kg × 10/60 h ≈ 146 kcal
+  ok(after - before >= 140 && after - before <= 150, `logged exercise adds burned calories (+${after - before} kcal)`);
+  ok((await text()).includes('Jump rope'), 'session appears in history');
+  await page.click('[data-testid=workouts] a >> nth=0');
+  await page.click('[data-testid=player] button:has-text("Start")'); await page.waitForTimeout(2300);
+  ok(/00:5[78]/.test(await page.textContent('[data-testid=player]')), 'workout timer counts down');
+  await page.click('[data-testid=player] button:has-text("Pause")');
+  await go('/sport/tips'); ok((await page.locator('section.card').count()) === 10, '10 tips shown');
+  await go('/'); ok((await page.textContent('[data-testid=home-burned]')).match(/\d{3} kcal/), 'home burned includes sport');
+});
+
 await step('emotional wellness', async () => {
   await go('/wellness/checkin');
   const yesNo = page.locator('section.card'); const c = await yesNo.count();
@@ -182,7 +177,6 @@ await step('emotional wellness', async () => {
   await go('/wellness/stress'); await page.click('button:has-text("Start")'); ok(await page.isVisible('[data-testid=stress-step]'), 'guided stress exercise runs');
   await go('/wellness/drinks'); ok((await text()).includes('liver and kidneys'), 'drinks: detox disclaimer');
   await go('/wellness/habits'); await page.locator('input[type=checkbox]').first().check(); ok(await page.locator('input[type=checkbox]').first().isChecked(), 'habit ticked');
-  await go('/wellness/sleep'); ok((await text()).includes('Enable this section'), 'sleep tracking is opt-in');
 });
 
 await step('weight progress + calorie excess notification', async () => {
@@ -219,8 +213,8 @@ await step('Arabic RTL + Darija + French', async () => {
 });
 
 await step('every page renders on mobile without horizontal scroll', async () => {
-  const routes = ['/', '/coach', '/food', '/food/database', '/food/diary', '/food/fridge', '/food/recipes', '/food/recipes/couscous_beef', '/food/moroccan', '/food/planner', '/food/sugar', '/food/shopping', '/food/budget', '/food/custom',
-    '/wellness', '/wellness/checkin', '/wellness/journal', '/wellness/breathing', '/wellness/stress', '/wellness/habits', '/wellness/drinks', '/wellness/water', '/wellness/walk', '/wellness/sleep', '/wellness/period',
+  const routes = ['/', '/coach', '/sport', '/sport/tips', '/sport/workout/hiit15', '/food', '/food/database', '/food/diary', '/food/recipes', '/food/recipes/couscous_beef', '/food/moroccan', '/food/planner', '/food/sugar', '/food/budget',
+    '/wellness', '/wellness/checkin', '/wellness/journal', '/wellness/breathing', '/wellness/stress', '/wellness/habits', '/wellness/drinks', '/wellness/water', '/wellness/walk',
     '/progress', '/progress/weight', '/progress/nutrition', '/progress/activity', '/progress/report', '/profile', '/profile/edit', '/profile/goals', '/profile/language', '/profile/notifications', '/profile/privacy', '/profile/settings'];
   const bad = [];
   for (const r of routes) { await go(r); const ov = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth); const h1 = await page.locator('h1, h2').count(); if (ov > 1 || !h1) bad.push(`${r} (overflow ${ov}, headings ${h1})`); }

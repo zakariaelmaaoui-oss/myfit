@@ -34,3 +34,16 @@ describe('walking energy', () => {
     expect(e.speedKmh).toBeCloseTo(4.8, 1);
   });
 });
+
+import { activityKcal, workoutKcal } from './activity';
+import { WORKOUTS, getExercise, REST_MET } from '../data/sport';
+describe('exercise calories', () => {
+  it('MET × kg × h', () => { expect(activityKcal(8, 70, 30)).toBe(280); expect(activityKcal(3.8, 60, 10)).toBe(38); });
+  it('workout sums blocks', () => {
+    expect(workoutKcal([{ met: 8, sec: 1800 }, { met: 1.5, sec: 600 }], 70)).toEqual({ kcal: 280 + 18, minutes: 40 });
+  });
+  it('every workout uses known exercises', () => {
+    for (const w of WORKOUTS) for (const b of w.blocks) expect(b.ex === 'rest' || !!getExercise(b.ex), `${w.id}:${b.ex}`).toBe(true);
+    expect(REST_MET).toBeLessThan(2);
+  });
+});

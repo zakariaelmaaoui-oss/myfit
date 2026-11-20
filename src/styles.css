@@ -298,3 +298,12 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; width: 100%; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 .chips.scroll-x { scrollbar-width: none; } .chips.scroll-x::-webkit-scrollbar { display: none; }
+/* Sport */
+.sporthero { display: flex; align-items: center; gap: 12px; padding: 18px; border-radius: 26px; color: var(--text);
+  background: linear-gradient(135deg, #ffd9e6 0%, #fff0f5 50%, #e4f4ea 100%); box-shadow: var(--shadow); }
+:root[data-theme="dark"] .sporthero { background: linear-gradient(135deg, #4a2537, #2a1f26 60%, #1f3328); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .sporthero { background: linear-gradient(135deg, #4a2537, #2a1f26 60%, #1f3328); } }
+.sporthero .statbig { display: block; margin: 4px 0; color: var(--pink-strong); }
+.sportemoji { font-size: 3rem; line-height: 1; }
+.workoutcard { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow); text-decoration: none; color: var(--text); }
+.player.rest { background: var(--green-soft); }

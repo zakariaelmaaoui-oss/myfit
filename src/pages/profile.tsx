@@ -117,8 +117,6 @@ export function Privacy() {
     <section className="card stack"><h2>{t('privacy.where')}</h2><p className="small">{mode === 'local' ? t('privacy.local') : t('privacy.cloud')}</p></section>
     <section className="card stack"><h2>{t('privacy.consents')}</h2>
       <label className="check"><input type="checkbox" checked={!!profile?.consent_sensitive} onChange={e => saveProfile({ consent_sensitive: e.target.checked, consent_at: e.target.checked ? new Date().toISOString() : null, ...(e.target.checked ? {} : { enable_period: false, enable_sleep: false, pregnant: false, breastfeeding: false, medical_supervision: false, eating_disorder_history: false, health_notes: '' }) })} /><span className="small">{t('p.consent')}</span></label>
-      <label className="check"><input type="checkbox" disabled={!profile?.consent_sensitive} checked={!!profile?.enable_sleep} onChange={e => saveProfile({ enable_sleep: e.target.checked })} />{t('privacy.sleep')}</label>
-      <label className="check"><input type="checkbox" disabled={!profile?.consent_sensitive} checked={!!profile?.enable_period} onChange={e => saveProfile({ enable_period: e.target.checked })} />{t('privacy.period')}</label>
       <label className="check"><input type="checkbox" checked={profile?.track_weight !== false} onChange={e => saveProfile({ track_weight: e.target.checked })} />{t('p.trackWeight')}</label>
       <p className="tiny muted">{t('privacy.withdraw')}</p>{profile?.consent_at && <p className="tiny muted">{t('privacy.consentAt', { d: new Date(profile.consent_at).toLocaleDateString() })}</p>}</section>
     <section className="card stack"><h2>{t('coach.title')}</h2><p className="small muted">{t('coach.privacyShort')}</p>

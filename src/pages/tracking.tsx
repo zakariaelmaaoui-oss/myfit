@@ -67,11 +67,12 @@ export function useWalkTimer() {
 export function Walk() {
   const { t, nf, df } = useI18n(); const { data, profile, saveProfile, insert, remove, toast } = useApp(); const timer = useWalkTimer();
   const today = isoDate(); const goal = profile?.walk_goal_min ?? 30;
-  const todays = data.activity_logs.filter(a => a.date === today);
+  const walks = data.activity_logs.filter(a => (a.kind ?? 'walk') === 'walk');
+  const todays = walks.filter(a => a.date === today);
   const todayMin = todays.reduce((s, a) => s + Number(a.minutes), 0);
   const todaySteps = todays.reduce((s, a) => s + (Number(a.steps) || 0), 0);
   const todayKcal = todays.reduce((s, a) => s + (Number(a.kcal_burned) || 0), 0);
-  const week = lastNDays(7).map(d => ({ d: df(d, { weekday: 'short' }), min: Math.round(data.activity_logs.filter(a => a.date === d).reduce((s, a) => s + Number(a.minutes), 0)) }));
+  const week = lastNDays(7).map(d => ({ d: df(d, { weekday: 'short' }), min: Math.round(walks.filter(a => a.date === d).reduce((s, a) => s + Number(a.minutes), 0)) }));
   const [manual, setManual] = useState(''); const [steps, setSteps] = useState(''); const [g, setG] = useState(String(goal)); const [err, setErr] = useState('');
   const addManual = async () => {
     setErr(''); const m = Number(manual); const s = steps ? Number(steps) : null;
@@ -108,72 +109,10 @@ export function Walk() {
       {err && <p className="err">{err}</p>}<button className="btn" onClick={addManual}>{t('common.add')}</button></section>
     <section className="card stack"><h2>{t('walk.goal')}</h2><div className="row"><input type="number" min={5} max={300} value={g} onChange={e => setG(e.target.value)} aria-label={t('walk.goal')} />
       <button className="btn" onClick={async () => { const v = Number(g); if (v >= 5 && v <= 300) { await saveProfile({ walk_goal_min: v }); toast(t('common.saved'), 'ok'); } }}>{t('common.save')}</button></div></section>
-    <section className="card"><h2>{t('walk.history')}</h2>{data.activity_logs.length ? <div className="list">{[...data.activity_logs].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20).map(a => <div className="li" key={a.id}>
+    <section className="card"><h2>{t('walk.history')}</h2>{walks.length ? <div className="list">{[...walks].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 20).map(a => <div className="li" key={a.id}>
       <span className="grow">{df(a.date)} · {nf(a.minutes)} {t('unit.min')}{a.steps ? ` · ${nf(a.steps)} ${t('walk.stepsShort')}` : ''}{a.kcal_burned ? ` · ${nf(a.kcal_burned)} kcal` : ''}</span>
       <button className="iconbtn" aria-label={t('common.delete')} onClick={() => remove('activity_logs', a.id)}><Icon n="trash" s={16} /></button></div>)}</div> : <Empty>{t('walk.none')}</Empty>}</section>
   </Page>;
 }
 
-// ---------------- Sleep ----------------
-export function Sleep() {
-  const { t, df, nf } = useI18n(); const { data, insert, remove, profile, toast } = useApp();
-  const [date, setDate] = useState(isoDate()); const [hours, setHours] = useState('7.5'); const [q, setQ] = useState(3); const [note, setNote] = useState(''); const [err, setErr] = useState('');
-  if (!profile?.enable_sleep) return <OptIn title={t('nav.sleep')} field="enable_sleep" />;
-  const rows = [...data.sleep_logs].sort((a, b) => b.date.localeCompare(a.date));
-  const week = lastNDays(7).map(d => ({ d: df(d, { weekday: 'short' }), h: Number(data.sleep_logs.find(s => s.date === d)?.hours ?? 0) }));
-  const save = async () => { setErr(''); try { await insert('sleep_logs', { date, hours: Number(hours), quality: q, note }); setNote(''); toast(t('common.saved'), 'ok'); } catch (e) { setErr(errMsg(e)); } };
-  return <Page title={t('nav.sleep')} back>
-    <section className="card stack">
-      <div className="grid2"><label className="field">{t('common.date')}<input type="date" value={date} max={isoDate()} onChange={e => setDate(e.target.value)} /></label>
-        <label className="field">{t('sleep.hours')}<input type="number" step="0.25" min={0} max={24} value={hours} onChange={e => setHours(e.target.value)} /></label></div>
-      <div className="field">{t('sleep.quality')}<div className="chips">{[1, 2, 3, 4, 5].map(n => <button key={n} className={`chip ${q === n ? 'on' : ''}`} onClick={() => setQ(n)}>{t('sleep.q' + n)}</button>)}</div></div>
-      <label className="field">{t('common.note')}<input value={note} onChange={e => setNote(e.target.value)} /></label>
-      {err && <p className="err">{err}</p>}<button className="btn primary" onClick={save}>{t('common.save')}</button>
-      <p className="tiny muted">{t('sleep.disclaimer')}</p>
-    </section>
-    <section className="card"><h2>{t('common.last7')}</h2><div className="chart"><ResponsiveContainer><BarChart data={week}><CartesianGrid vertical={false} stroke="var(--line)" /><XAxis dataKey="d" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} width={30} /><Tooltip /><RBar dataKey="h" fill="#8d84c4" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></div></section>
-    <section className="card"><h2>{t('sleep.history')}</h2>{rows.length ? <div className="list">{rows.slice(0, 30).map(s => <div className="li" key={s.id}><Icon n="moon" s={18} />
-      <span className="grow">{df(s.date)} · {nf(s.hours, 2)} h · {t('sleep.q' + s.quality)}{s.note ? ` · ${s.note}` : ''}</span>
-      <button className="iconbtn" aria-label={t('common.delete')} onClick={() => remove('sleep_logs', s.id)}><Icon n="trash" s={16} /></button></div>)}</div> : <Empty>{t('common.noData')}</Empty>}</section>
-  </Page>;
-}
-
-// ---------------- Period ----------------
-export const SYMPTOMS = ['cramps', 'bloating', 'headache', 'fatigue', 'tender', 'acne', 'backpain', 'nausea'];
-export function Period() {
-  const { t, df } = useI18n(); const { data, insert, update, remove, profile, toast } = useApp();
-  const [start, setStart] = useState(isoDate()); const [end, setEnd] = useState(''); const [sym, setSym] = useState<string[]>([]);
-  const [appetite, setAppetite] = useState(''); const [mood, setMood] = useState(''); const [err, setErr] = useState('');
-  if (!profile?.enable_period) return <OptIn title={t('nav.period')} field="enable_period" />;
-  const rows = [...data.period_logs].sort((a, b) => b.start_date.localeCompare(a.start_date));
-  const save = async () => {
-    setErr(''); if (end && end < start) return setErr(t('period.endBefore'));
-    try { await insert('period_logs', { start_date: start, end_date: end || null, symptoms: sym, appetite: appetite || null, mood: mood || null }); setSym([]); toast(t('common.saved'), 'ok'); } catch (e) { setErr(errMsg(e)); }
-  };
-  const lengths = rows.slice(0, -1).map((r, i) => (new Date(r.start_date).getTime() - new Date(rows[i + 1].start_date).getTime()) / 86400000).filter(x => x > 0 && x < 90);
-  const avg = lengths.length ? Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length) : null;
-  return <Page title={t('nav.period')} back>
-    <section className="card stack">
-      <div className="grid2"><label className="field">{t('period.start')}<input type="date" value={start} onChange={e => setStart(e.target.value)} /></label>
-        <label className="field">{t('period.end')}<input type="date" value={end} onChange={e => setEnd(e.target.value)} /></label></div>
-      <div className="field">{t('period.symptoms')}<div className="chips">{SYMPTOMS.map(s => <button key={s} className={`chip ${sym.includes(s) ? 'on' : ''}`} onClick={() => setSym(x => x.includes(s) ? x.filter(y => y !== s) : [...x, s])}>{t('sym.' + s)}</button>)}</div></div>
-      <div className="grid2"><label className="field">{t('period.appetite')}<select value={appetite} onChange={e => setAppetite(e.target.value)}><option value="">—</option>{['lower', 'usual', 'higher'].map(a => <option key={a} value={a}>{t('period.app.' + a)}</option>)}</select></label>
-        <label className="field">{t('period.mood')}<select value={mood} onChange={e => setMood(e.target.value)}><option value="">—</option>{MOODS.map(m => <option key={m} value={m}>{t('mood.' + m)}</option>)}</select></label></div>
-      {err && <p className="err">{err}</p>}<button className="btn primary" onClick={save}>{t('common.save')}</button>
-      <p className="tiny muted">{t('period.disclaimer')}</p>
-    </section>
-    {avg && <div className="card soft small">{t('period.avg', { d: avg })}</div>}
-    <section className="card"><h2>{t('period.history')}</h2>{rows.length ? <div className="list">{rows.map(r => <div className="li" key={r.id}>
-      <div className="grow"><b>{df(r.start_date)}{r.end_date ? ` → ${df(r.end_date)}` : ''}</b><div className="tiny muted">{(r.symptoms ?? []).map((s: string) => t('sym.' + s)).join(', ')}{r.appetite ? ` · ${t('period.appetite')}: ${t('period.app.' + r.appetite)}` : ''}{r.mood ? ` · ${t('mood.' + r.mood)}` : ''}</div></div>
-      {!r.end_date && <button className="btn sm" onClick={() => update('period_logs', r.id, { end_date: isoDate() })}>{t('period.endToday')}</button>}
-      <button className="iconbtn" aria-label={t('common.delete')} onClick={() => remove('period_logs', r.id)}><Icon n="trash" s={16} /></button></div>)}</div> : <Empty>{t('common.noData')}</Empty>}</section>
-  </Page>;
-}
 export const MOODS = ['calm', 'happy', 'tired', 'stressed', 'sad', 'anxious', 'irritable', 'bored'];
-
-function OptIn({ title, field }: { title: string; field: 'enable_sleep' | 'enable_period' }) {
-  const { t } = useI18n(); const { saveProfile, profile } = useApp(); const [c, setC] = useState(!!profile?.consent_sensitive);
-  return <Page title={title} back><section className="card stack"><p>{t('optin.text')}</p>
-    <label className="check"><input type="checkbox" checked={c} onChange={e => setC(e.target.checked)} /><span className="small">{t('p.consent')}</span></label>
-    <button className="btn primary" disabled={!c} onClick={() => saveProfile({ [field]: true, consent_sensitive: true, consent_at: profile?.consent_at ?? new Date().toISOString() } as any)}>{t('optin.enable')}</button></section></Page>;
-}

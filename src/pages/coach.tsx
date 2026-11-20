@@ -4,7 +4,6 @@ import { useApp } from '../lib/app';
 import { useI18n } from '../lib/i18n';
 import { backend } from '../lib/store';
 import { addDays, isoDate, lastNDays, round, sumNutrients } from '../lib/nutrition';
-import { foodName, getFood } from '../lib/foods';
 import { Icon, Page, errMsg } from '../components/ui';
 
 const SUGGEST: Record<string, string[]> = {
@@ -34,7 +33,6 @@ function useCoachContext() {
         water_ml: data.water_logs.filter(w => w.date === today).reduce((a, w) => a + Number(w.ml), 0),
         walk_min: acts.reduce((a, x) => a + Number(x.minutes), 0), steps: acts.reduce((a, x) => a + (Number(x.steps) || 0), 0), kcal_burned_walking: acts.reduce((a, x) => a + (Number(x.kcal_burned) || 0), 0) },
       last7_days: { days_with_meals: logged.length, avg_kcal_logged_days: avgKcal },
-      fridge: data.fridge_items.slice(0, 20).map(f => foodName(getFood(f.food_id), 'en')),
       yesterday_logged: data.diary_entries.some(e => e.date === addDays(today, -1)),
       app_language: lang,
     };

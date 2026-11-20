@@ -25,7 +25,7 @@ export function Home() {
   const glasses = Math.floor(water / 250);
   const acts = data.activity_logs.filter(a => a.date === today);
   const steps = acts.reduce((a, x) => a + (Number(x.steps) || 0), 0);
-  const walkMin = acts.reduce((a, x) => a + Number(x.minutes), 0);
+  const walkMin = acts.filter(x => (x.kind ?? 'walk') === 'walk').reduce((a, x) => a + Number(x.minutes), 0);
   const burned = acts.reduce((a, x) => a + (Number(x.kcal_burned) || 0), 0);
   const hour = new Date().getHours();
   const e = { c: tot.totals.carbs * 4, p: tot.totals.protein * 4, f: tot.totals.fat * 9 }; const eT = e.c + e.p + e.f;
@@ -107,7 +107,7 @@ export function Home() {
       <Link className="tile t-lav" to="/progress/weight"><span className="ti">⚖️</span><b>{t('nav.weight')}</b></Link>
       <Link className="tile t-butter" to="/food/planner"><span className="ti">📅</span><b>{t('nav.planner')}</b></Link>
       <Link className="tile t-sky" to="/food/sugar"><span className="ti">🍬</span><b>{t('nav.sugar')}</b></Link>
-      <Link className="tile t-green" to="/food/fridge"><span className="ti">🧊</span><b>{t('nav.fridge')}</b></Link>
+      <Link className="tile t-green" to="/sport"><span className="ti">🏋️‍♀️</span><b>{t('nav.sport')}</b></Link>
       <Link className="tile t-peach" to="/wellness/breathing"><span className="ti">🌬️</span><b>{t('nav.breathing')}</b></Link>
     </div></section>
     <AddFoodFlow open={!!adding} onClose={() => setAdding(null)} date={sel} meal={adding ?? undefined} />

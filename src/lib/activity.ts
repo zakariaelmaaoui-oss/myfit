@@ -52,3 +52,14 @@ export function estimateWalk(p: { minutes: number; steps: number | null; weightK
   const met = walkingMet(speedKmh);
   return { distanceM, speedKmh, met, kcal: round(met * p.weightKg * hours) };
 }
+
+/** kcal for an activity at a given MET (gross estimate). */
+export function activityKcal(met: number, weightKg: number, minutes: number): number {
+  return round(met * weightKg * (Math.max(0, minutes) / 60));
+}
+/** kcal and minutes for the part of a workout that was done (blocks of MET × seconds). */
+export function workoutKcal(blocks: { met: number; sec: number }[], weightKg: number): { kcal: number; minutes: number } {
+  const sec = blocks.reduce((a, b) => a + b.sec, 0);
+  const kcal = blocks.reduce((a, b) => a + b.met * weightKg * (b.sec / 3600), 0);
+  return { kcal: round(kcal), minutes: round(sec / 60, 1) };
+}

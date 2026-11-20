@@ -7,12 +7,13 @@ import { Icon, Logo, Toasts } from './components/ui';
 import { Notifier } from './components/Notifier';
 import { Forgot, Login, Register, ResetPassword, Welcome } from './pages/auth';
 import { Home } from './pages/home';
-import { CustomFoods, Diary, FoodDatabase, FoodHub } from './pages/food';
-import { Fridge, RecipeDetail, Recipes } from './pages/recipes';
-import { Budget, Planner, Shopping } from './pages/planner';
+import { Diary, FoodDatabase, FoodHub } from './pages/food';
+import { RecipeDetail, Recipes } from './pages/recipes';
+import { Budget, Planner } from './pages/planner';
+import { SportHub, WorkoutPlayer, SportTips } from './pages/sport';
 import { Sugar } from './pages/sugar';
 import { Breathing, CheckIn, Drinks, Habits, Journal, Stress, WellnessHub } from './pages/wellness';
-import { Period, Sleep, Walk, Water } from './pages/tracking';
+import { Walk, Water } from './pages/tracking';
 import { ActivityHistory, NutritionCharts, ProgressHub, Report, Weight } from './pages/progress';
 import { Coach } from './pages/coach';
 import { EditProfile, Goals, Language, Notifications, Privacy, ProfileHub, Settings, applyTheme } from './pages/profile';
@@ -61,15 +62,12 @@ export default function App() {
     <Route path="/food" element={<Shell><FoodHub /></Shell>} />
     <Route path="/food/database" element={<Shell><FoodDatabase /></Shell>} />
     <Route path="/food/diary" element={<Shell><Diary /></Shell>} />
-    <Route path="/food/fridge" element={<Shell><Fridge /></Shell>} />
     <Route path="/food/recipes" element={<Shell><Recipes /></Shell>} />
     <Route path="/food/recipes/:id" element={<Shell><RecipeDetail /></Shell>} />
     <Route path="/food/moroccan" element={<Shell><Recipes moroccanOnly /></Shell>} />
     <Route path="/food/planner" element={<Shell><Planner /></Shell>} />
     <Route path="/food/sugar" element={<Shell><Sugar /></Shell>} />
-    <Route path="/food/shopping" element={<Shell><Shopping /></Shell>} />
     <Route path="/food/budget" element={<Shell><Budget /></Shell>} />
-    <Route path="/food/custom" element={<Shell><CustomFoods /></Shell>} />
     <Route path="/coach" element={<Shell><Coach /></Shell>} />
     <Route path="/wellness" element={<Shell><WellnessHub /></Shell>} />
     <Route path="/wellness/checkin" element={<Shell><CheckIn /></Shell>} />
@@ -80,8 +78,9 @@ export default function App() {
     <Route path="/wellness/drinks" element={<Shell><Drinks /></Shell>} />
     <Route path="/wellness/water" element={<Shell><Water /></Shell>} />
     <Route path="/wellness/walk" element={<Shell><Walk /></Shell>} />
-    <Route path="/wellness/sleep" element={<Shell><Sleep /></Shell>} />
-    <Route path="/wellness/period" element={<Shell><Period /></Shell>} />
+    <Route path="/sport" element={<Shell><SportHub /></Shell>} />
+    <Route path="/sport/workout/:id" element={<Shell><WorkoutPlayer /></Shell>} />
+    <Route path="/sport/tips" element={<Shell><SportTips /></Shell>} />
     <Route path="/progress" element={<Shell><ProgressHub /></Shell>} />
     <Route path="/progress/weight" element={<Shell><Weight /></Shell>} />
     <Route path="/progress/nutrition" element={<Shell><NutritionCharts /></Shell>} />

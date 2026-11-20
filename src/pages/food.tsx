@@ -1,27 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useApp } from '../lib/app';
 import { useI18n } from '../lib/i18n';
 import { addDays, isoDate, sumNutrients } from '../lib/nutrition';
 import { foodName, getFood, isHighAddedSugar, type Food } from '../lib/foods';
 import { AddFoodFlow, AddFoodSheet, FoodSearch, MEALS, type MealSlot } from '../components/FoodPicker';
-import { Confirm, Empty, Icon, MacroBars, Modal, NutrientTable, Page, errMsg, useFmt } from '../components/ui';
+import { Confirm, Icon, MacroBars, Modal, NutrientTable, Page, useFmt } from '../components/ui';
 
 export function FoodHub() {
   const { t } = useI18n();
   const tiles = [
-    { to: '/food/database', i: 'search', c: 't-green', k: 'database' }, { to: '/food/diary', i: 'book', c: 't-peach', k: 'diary' },
-    { to: '/food/fridge', i: 'fridge', c: 't-sky', k: 'fridge' }, { to: '/food/recipes', i: 'pot', c: 't-butter', k: 'recipes' },
+    { to: '/food/database', i: 'search', c: 't-green', k: 'database' },
+    { to: '/food/recipes', i: 'pot', c: 't-butter', k: 'recipes' },
     { to: '/food/moroccan', i: 'star', c: 't-rose', k: 'moroccan' }, { to: '/food/planner', i: 'calendar', c: 't-lav', k: 'planner' },
-    { to: '/food/sugar', i: 'candy', c: 't-peach', k: 'sugar' }, { to: '/food/shopping', i: 'cart', c: 't-green', k: 'shopping' },
-    { to: '/food/budget', i: 'wallet', c: 't-beige', k: 'budget' }, { to: '/food/custom', i: 'barcode', c: 't-sky', k: 'custom' },
+    { to: '/food/sugar', i: 'candy', c: 't-peach', k: 'sugar' },
+    { to: '/food/budget', i: 'wallet', c: 't-beige', k: 'budget' },
   ];
   return <Page title={t('nav.food')}><div className="grid2">{tiles.map(x => <Link key={x.to} to={x.to} className={`tile ${x.c}`}>
     <span className="ti"><Icon n={x.i} /></span><b>{t('nav.' + x.k)}</b><span>{t('hub.' + x.k)}</span></Link>)}</div></Page>;
 }
 
 export function FoodDetail({ food, onClose }: { food: Food | null; onClose: () => void }) {
-  const { t, lang } = useI18n(); const nav = useNavigate(); const [adding, setAdding] = useState(false);
+  const { t, lang } = useI18n(); const [adding, setAdding] = useState(false);
   if (!food) return null;
   if (adding) return <AddFoodSheet food={food} open onClose={() => { setAdding(false); onClose(); }} />;
   return <Modal open onClose={onClose} title={foodName(food, lang)}>
@@ -35,14 +35,13 @@ export function FoodDetail({ food, onClose }: { food: Food | null; onClose: () =
     {food.addedSugarBasis === 'sweetener' && <p className="tiny muted">{t('food.addedBasisAll')}</p>}
     {food.addedSugarBasis === 'unknown' && <p className="tiny muted">{t('food.addedBasisUnknown')}</p>}
     {food.portions.length > 0 && <><h3>{t('food.servings')}</h3><div className="list small">{food.portions.map(p => <div className="li" key={p.label}><span className="grow">{p.label}</span><span className="num">{p.grams} g</span></div>)}</div></>}
-    <div className="row"><button className="btn grow" onClick={() => nav(`/food/custom?from=${encodeURIComponent(food.id)}`)}>{t('food.correct')}</button>
-      <button className="btn primary grow" onClick={() => setAdding(true)}>{t('diary.add')}</button></div>
+    <button className="btn primary block" onClick={() => setAdding(true)}>{t('diary.add')}</button>
   </Modal>;
 }
 
 export function FoodDatabase() {
   const { t } = useI18n(); const [sel, setSel] = useState<Food | null>(null);
-  return <Page title={t('nav.database')} back actions={<Link className="btn sm soft" to="/food/custom">{t('custom.new')}</Link>}>
+  return <Page title={t('nav.database')} back>
     <p className="small muted">{t('food.dbIntro')}</p>
     <FoodSearch onPick={setSel} />
     <FoodDetail food={sel} onClose={() => setSel(null)} />
@@ -93,97 +92,3 @@ export function Diary() {
   </Page>;
 }
 
-// ---------------- Custom foods, corrections and barcode lookup ----------------
-const OFF_ENABLED = (import.meta.env.VITE_ENABLE_OPENFOODFACTS ?? 'true') !== 'false';
-const blank = { name: '', brand: '', barcode: '', category: 'packaged', kcal: '', protein: '', carbs: '', fat: '', fiber: '', sugar: '', added_sugar: '', sodium: '', serving_g: '', serving_label: '', source: 'manual' };
-
-export async function lookupOpenFoodFacts(code: string) {
-  const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name,brands,nutriments,serving_quantity,serving_size`);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const j = await res.json(); if (j.status !== 1 || !j.product) return null;
-  const n = j.product.nutriments || {}; const v = (k: string) => (n[k] === undefined || n[k] === null || n[k] === '' ? '' : String(Math.round(Number(n[k]) * 10) / 10));
-  return { name: j.product.product_name || '', brand: j.product.brands || '', kcal: v('energy-kcal_100g'), protein: v('proteins_100g'), carbs: v('carbohydrates_100g'),
-    fat: v('fat_100g'), fiber: v('fiber_100g'), sugar: v('sugars_100g'), added_sugar: v('added-sugars_100g'), sodium: n['sodium_100g'] !== undefined ? String(Math.round(Number(n['sodium_100g']) * 1000)) : '',
-    serving_g: j.product.serving_quantity ? String(j.product.serving_quantity) : '', serving_label: j.product.serving_size || '' };
-}
-
-export function CustomFoods() {
-  const { t, lang } = useI18n(); const { data, insert, update, remove, toast } = useApp(); const fmt = useFmt();
-  const [params] = useSearchParams();
-  const [form, setForm] = useState<any>(blank); const [editId, setEditId] = useState<string | null>(null);
-  const [err, setErr] = useState(''); const [msg, setMsg] = useState(''); const [busy, setBusy] = useState(false); const [scan, setScan] = useState(false);
-  useEffect(() => {
-    const from = params.get('from'); if (!from) return; const f = getFood(from); if (!f) return;
-    const s = (v: number | null | undefined) => (v === null || v === undefined ? '' : String(v));
-    setForm({ ...blank, name: `${foodName(f, lang)} (${t('custom.corrected')})`, category: f.category, kcal: s(f.per100g.kcal), protein: s(f.per100g.protein), carbs: s(f.per100g.carbs),
-      fat: s(f.per100g.fat), fiber: s(f.per100g.fiber), sugar: s(f.per100g.sugar), added_sugar: s(f.per100g.addedSugar), sodium: s(f.per100g.sodium) });
-  }, [params]); // eslint-disable-line
-  const setF = (k: string, v: string) => setForm((x: any) => ({ ...x, [k]: v }));
-  const lookup = async (code = form.barcode) => {
-    setErr(''); setMsg(''); if (!/^\d{6,14}$/.test(code)) return setErr(t('custom.badBarcode'));
-    const existing = data.custom_foods.find(c => c.barcode === code); if (existing) { setMsg(t('custom.alreadySaved')); return; }
-    setBusy(true);
-    try { const r = await lookupOpenFoodFacts(code); if (!r) setMsg(t('custom.notFound')); else { setForm((x: any) => ({ ...x, ...r, barcode: code, source: 'openfoodfacts' })); setMsg(t('custom.found')); } }
-    catch { setErr(t('custom.lookupFailed')); } finally { setBusy(false); }
-  };
-  const save = async () => {
-    setErr('');
-    const nOrNull = (v: any) => (v === '' || v === null || v === undefined ? null : Number(v));
-    const row = { name: String(form.name).trim(), brand: form.brand || null, barcode: form.barcode || null, category: form.category, source: form.source,
-      kcal: nOrNull(form.kcal), protein: nOrNull(form.protein), carbs: nOrNull(form.carbs), fat: nOrNull(form.fat), fiber: nOrNull(form.fiber),
-      sugar: nOrNull(form.sugar), added_sugar: nOrNull(form.added_sugar), sodium: nOrNull(form.sodium), serving_g: nOrNull(form.serving_g), serving_label: form.serving_label || null };
-    if (row.kcal === null) return setErr(t('custom.needKcal'));
-    try { if (editId) await update('custom_foods', editId, row); else await insert('custom_foods', row); toast(t('common.saved'), 'ok'); setForm(blank); setEditId(null); }
-    catch (e) { setErr(errMsg(e)); }
-  };
-  const fields: [string, string][] = [['kcal', 'n.kcal'], ['protein', 'n.protein'], ['carbs', 'n.carbs'], ['fat', 'n.fat'], ['fiber', 'n.fiber'], ['sugar', 'n.sugar'], ['added_sugar', 'n.addedSugar'], ['sodium', 'n.sodiumMg']];
-  return <Page title={t('nav.custom')} back>
-    <section className="card stack">
-      <h2>{editId ? t('common.edit') : t('custom.new')}</h2>
-      {OFF_ENABLED ? <div className="stack tight"><label className="field">{t('custom.barcode')}<div className="row"><input inputMode="numeric" value={form.barcode} onChange={e => setF('barcode', e.target.value.replace(/\D/g, ''))} />
-        <button className="btn" disabled={busy} onClick={() => lookup()}>{t('custom.lookup')}</button>
-        <button className="iconbtn" aria-label={t('custom.scan')} onClick={() => setScan(true)}><Icon n="camera" /></button></div></label>
-        <p className="tiny muted">{t('custom.offNote')}</p></div> : <p className="tiny muted">{t('custom.offDisabled')}</p>}
-      {msg && <p className="ok">{msg}</p>}
-      <label className="field">{t('custom.name')}<input value={form.name} onChange={e => setF('name', e.target.value)} /></label>
-      <div className="grid2"><label className="field">{t('custom.brand')}<input value={form.brand} onChange={e => setF('brand', e.target.value)} /></label>
-        <label className="field">{t('custom.category')}<select value={form.category} onChange={e => setF('category', e.target.value)}>{['packaged', 'drinks', 'bread', 'cereals', 'dairy', 'fruits', 'vegetables', 'meat', 'chicken', 'fish', 'eggs', 'legumes', 'nuts', 'oils', 'custom'].map(c => <option key={c} value={c}>{t('cat.' + c)}</option>)}</select></label></div>
-      <p className="small muted">{t('custom.per100')}</p>
-      <div className="grid2">{fields.map(([k, l]) => <label className="field" key={k}>{t(l)}<input type="number" inputMode="decimal" step="0.1" min={0} value={form[k]} placeholder={t('common.unknown')} onChange={e => setF(k, e.target.value)} /></label>)}</div>
-      <div className="grid2"><label className="field">{t('custom.servingG')}<input type="number" value={form.serving_g} onChange={e => setF('serving_g', e.target.value)} /></label>
-        <label className="field">{t('custom.servingLabel')}<input value={form.serving_label} onChange={e => setF('serving_label', e.target.value)} /></label></div>
-      <p className="tiny muted">{t('custom.unknownNote')}</p>
-      {err && <p className="err" role="alert">{err}</p>}
-      <div className="row">{editId && <button className="btn grow" onClick={() => { setForm(blank); setEditId(null); }}>{t('common.cancel')}</button>}<button className="btn primary grow" onClick={save}>{t('common.save')}</button></div>
-    </section>
-    <section className="card"><h2>{t('custom.mine')}</h2>{data.custom_foods.length ? <div className="list">{data.custom_foods.map(c => <div className="li" key={c.id}>
-      <div className="grow"><b>{c.name}</b><div className="tiny muted">{c.brand ? `${c.brand} · ` : ''}{fmt(c.kcal, 'kcal')} / 100 g · {c.source === 'openfoodfacts' ? 'Open Food Facts' : t('custom.manual')}{c.barcode ? ` · ${c.barcode}` : ''}</div></div>
-      <button className="iconbtn" aria-label={t('common.edit')} onClick={() => { setEditId(c.id); setForm(Object.fromEntries(Object.keys(blank).map(k => [k, c[k] ?? '']))); window.scrollTo(0, 0); }}><Icon n="edit" s={16} /></button>
-      <button className="iconbtn" aria-label={t('common.delete')} onClick={() => remove('custom_foods', c.id)}><Icon n="trash" s={16} /></button></div>)}</div> : <Empty>{t('custom.none')}</Empty>}</section>
-    {scan && <Scanner onClose={() => setScan(false)} onCode={c => { setScan(false); setF('barcode', c); lookup(c); }} />}
-  </Page>;
-}
-
-/** Camera barcode scanning with the browser's built-in BarcodeDetector (standard decoding, no image analysis service). */
-function Scanner({ onClose, onCode }: { onClose: () => void; onCode: (c: string) => void }) {
-  const { t } = useI18n(); const video = useRef<HTMLVideoElement>(null); const [err, setErr] = useState('');
-  useEffect(() => {
-    const BD = (window as any).BarcodeDetector;
-    if (!BD) { setErr(t('custom.scanUnsupported')); return; }
-    let stream: MediaStream | null = null; let stop = false;
-    (async () => {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        if (!video.current) return; video.current.srcObject = stream; await video.current.play();
-        const det = new BD({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] });
-        const tick = async () => {
-          if (stop || !video.current) return;
-          try { const r = await det.detect(video.current); if (r[0]?.rawValue) { onCode(r[0].rawValue); return; } } catch { /* keep trying */ }
-          setTimeout(tick, 300);
-        }; tick();
-      } catch { setErr(t('custom.cameraDenied')); }
-    })();
-    return () => { stop = true; stream?.getTracks().forEach(tr => tr.stop()); };
-  }, []); // eslint-disable-line
-  return <Modal open onClose={onClose} title={t('custom.scan')}>{err ? <p className="err">{err}</p> : <video ref={video} className="scan" muted playsInline />}</Modal>;
-}

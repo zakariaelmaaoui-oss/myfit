@@ -3,14 +3,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useApp } from '../lib/app';
 import { useI18n } from '../lib/i18n';
 import { RECIPES, getRecipe, l3, recipeName, recipeSteps, type Meal } from '../data/recipes';
-import { matchFridge, priceMap, recipeInfo, scaledIngredients, type RecipeInfo } from '../lib/recipes';
-import { foodName, getFood, type Food } from '../lib/foods';
+import { priceMap, recipeInfo, scaledIngredients, type RecipeInfo } from '../lib/recipes';
+import { foodName, getFood } from '../lib/foods';
 import { recipeEmoji } from '../lib/emoji';
 import { addDays, isoDate, recipeNutrition, scaleNutrients } from '../lib/nutrition';
-import { FoodSearch, MEALS, defaultMeal, type MealSlot } from '../components/FoodPicker';
+import { MEALS, defaultMeal, type MealSlot } from '../components/FoodPicker';
 import { Empty, Icon, Modal, NutrientTable, Page, errMsg, useFmt } from '../components/ui';
 
-const FILTERS = ['cost', 'protein', 'lowsugar', 'vegetarian', 'moroccan', 'quick', 'available', 'favorites'] as const;
+const FILTERS = ['cost', 'protein', 'lowsugar', 'vegetarian', 'moroccan', 'quick', 'favorites'] as const;
 type Filter = typeof FILTERS[number];
 
 export function RecipeCard({ info, extra }: { info: RecipeInfo; extra?: React.ReactNode }) {
@@ -34,8 +34,6 @@ export function Recipes({ moroccanOnly = false }: { moroccanOnly?: boolean }) {
   const [q, setQ] = useState(''); const [f, setF] = useState<Set<Filter>>(new Set(moroccanOnly ? ['moroccan'] : [])); const [meal, setMeal] = useState<'all' | Meal>('all');
   const prices = useMemo(() => priceMap(data.food_prices), [data.food_prices]);
   const favs = new Set(data.favorites.map(x => x.recipe_id));
-  const fridgeIds = data.fridge_items.map(x => x.food_id);
-  const avail = useMemo(() => new Map(matchFridge(fridgeIds, prices).map(m => [m.info.recipe.id, m.pct])), [data.fridge_items, prices]); // eslint-disable-line
   const list = useMemo(() => {
     let l = RECIPES.map(r => recipeInfo(r, prices));
     if (q) { const s = q.toLowerCase(); l = l.filter(i => [i.recipe.name.en, i.recipe.name.fr, i.recipe.name.ar].join(' ').toLowerCase().includes(s)); }
@@ -46,10 +44,9 @@ export function Recipes({ moroccanOnly = false }: { moroccanOnly?: boolean }) {
     if (f.has('lowsugar')) l = l.filter(i => i.lowAddedSugar);
     if (f.has('quick')) l = l.filter(i => i.quick);
     if (f.has('favorites')) l = l.filter(i => favs.has(i.recipe.id));
-    if (f.has('available')) l = l.filter(i => (avail.get(i.recipe.id) ?? 0) >= 50).sort((a, b) => (avail.get(b.recipe.id) ?? 0) - (avail.get(a.recipe.id) ?? 0));
     if (f.has('cost')) l = [...l].sort((a, b) => (a.costPerServing ?? Infinity) - (b.costPerServing ?? Infinity) || Number(!!b.recipe.budget) - Number(!!a.recipe.budget));
     return l;
-  }, [q, f, meal, prices, data.favorites, avail]); // eslint-disable-line
+  }, [q, f, meal, prices, data.favorites]); // eslint-disable-line
   const toggle = (x: Filter) => setF(s => { const n = new Set(s); n.has(x) ? n.delete(x) : n.add(x); return n; });
   const noPrices = f.has('cost') && list.every(i => i.costPerServing === null);
   return <Page title={moroccanOnly ? t('nav.moroccan') : t('nav.recipes')} back>
@@ -58,9 +55,8 @@ export function Recipes({ moroccanOnly = false }: { moroccanOnly?: boolean }) {
     <div className="chips">{FILTERS.filter(x => !(moroccanOnly && x === 'moroccan')).map(x => <button key={x} className={`chip ${f.has(x) ? 'on' : ''}`} onClick={() => toggle(x)}>{t('rf.' + x)}</button>)}</div>
     <div className="chips">{(['all', 'breakfast', 'lunch', 'dinner', 'snack'] as const).map(m => <button key={m} className={`chip ${meal === m ? 'on' : ''}`} onClick={() => setMeal(m)}>{m === 'all' ? t('common.all') : t('meal.' + m)}</button>)}</div>
     {noPrices && <div className="card beige small">{t('recipe.noPrices')} <Link to="/food/budget">{t('nav.budget')}</Link></div>}
-    {f.has('available') && !fridgeIds.length && <div className="card beige small">{t('fridge.emptyHint')} <Link to="/food/fridge">{t('nav.fridge')}</Link></div>}
     <p className="tiny muted">{t('recipe.count', { n: list.length })} · {t('recipe.calcNote')}</p>
-    <div className="stack" data-testid="recipe-list">{list.map(i => <RecipeCard key={i.recipe.id} info={i} extra={f.has('available') ? <div className="tiny muted" style={{ marginTop: 6 }}>{t('fridge.match', { p: avail.get(i.recipe.id) ?? 0 })}</div> : null} />)}</div>
+    <div className="stack" data-testid="recipe-list">{list.map(i => <RecipeCard key={i.recipe.id} info={i} />)}</div>
     {!list.length && <Empty>{t('recipe.none')}</Empty>}
     {!moroccanOnly && <p className="tiny muted center">{lang && t('recipe.stored')}</p>}
   </Page>;
@@ -130,40 +126,3 @@ export function RecipeToPlan({ recipeId, portions, onClose, date: d0, meal: m0 }
   </Modal>;
 }
 
-// ---------------- My Fridge ----------------
-export function Fridge() {
-  const { t, lang, nf, df } = useI18n(); const { data, insert, update, remove, toast } = useApp();
-  const [pick, setPick] = useState(false); const [sel, setSel] = useState<Food | null>(null); const [grams, setGrams] = useState('500'); const [exp, setExp] = useState(''); const [err, setErr] = useState('');
-  const [edit, setEdit] = useState<any>(null);
-  const prices = useMemo(() => priceMap(data.food_prices), [data.food_prices]);
-  const items = [...data.fridge_items].sort((a, b) => (a.expires_on || '9999').localeCompare(b.expires_on || '9999'));
-  const matches = useMemo(() => matchFridge(items.map(i => i.food_id), prices), [data.fridge_items, prices]); // eslint-disable-line
-  const today = isoDate(); const soon = addDays(today, 2);
-  const add = async () => {
-    setErr(''); try { await insert('fridge_items', { food_id: sel!.id, grams: grams ? Number(grams) : null, expires_on: exp || null }); toast(t('fridge.added'), 'ok'); setSel(null); setPick(false); setGrams('500'); setExp(''); } catch (e) { setErr(errMsg(e)); }
-  };
-  return <Page title={t('nav.fridge')} back actions={<button className="btn primary sm" onClick={() => setPick(true)}><Icon n="plus" s={16} />{t('common.add')}</button>}>
-    <p className="small muted">{t('fridge.intro')}</p>
-    <section className="card">{items.length ? <div className="list" data-testid="fridge-list">{items.map(i => {
-      const fd = getFood(i.food_id); const expired = i.expires_on && i.expires_on < today; const isSoon = i.expires_on && !expired && i.expires_on <= soon;
-      return <div className="li" key={i.id}><div className="grow"><b>{foodName(fd, lang)}</b><div className="tiny muted">{i.grams ? `${nf(i.grams)} g` : ''}{i.expires_on ? ` · ${t('fridge.expires')} ${df(i.expires_on)}` : ''}</div></div>
-        {expired && <span className="badge warn">{t('fridge.expired')}</span>}{isSoon && <span className="badge warn">{t('fridge.soon')}</span>}
-        <button className="iconbtn" aria-label={t('common.edit')} onClick={() => setEdit({ ...i })}><Icon n="edit" s={16} /></button>
-        <button className="iconbtn" aria-label={t('fridge.used')} onClick={() => remove('fridge_items', i.id)}><Icon n="check" s={16} /></button></div>;
-    })}</div> : <Empty>{t('fridge.empty')}</Empty>}</section>
-    {items.length > 0 && <><h2>{t('fridge.recipes')}</h2><p className="tiny muted">{t('fridge.matchNote')}</p>
-      <div className="stack" data-testid="fridge-matches">{matches.slice(0, 12).map(m => <RecipeCard key={m.info.recipe.id} info={m.info} extra={<div className="tiny" style={{ marginTop: 6 }}>
-        <b>{t('fridge.match', { p: m.pct })}</b>{m.missing.length > 0 && <span className="muted"> · {t('fridge.missing')}: {m.missing.map(x => foodName(getFood(x), lang)).join(', ')}</span>}</div>} />)}</div>
-      {!matches.length && <Empty>{t('fridge.noMatch')}</Empty>}</>}
-    {pick && !sel && <Modal open onClose={() => setPick(false)} title={t('fridge.add')}><FoodSearch onPick={setSel} autoFocus /></Modal>}
-    {sel && <Modal open onClose={() => { setSel(null); setPick(false); }} title={foodName(sel, lang)}>
-      <label className="field">{t('food.quantity')}<input type="number" value={grams} onChange={e => setGrams(e.target.value)} /></label>
-      <label className="field">{t('fridge.expiry')}<input type="date" value={exp} onChange={e => setExp(e.target.value)} /></label>
-      {err && <p className="err">{err}</p>}<button className="btn primary" onClick={add}>{t('common.add')}</button></Modal>}
-    {edit && <Modal open onClose={() => setEdit(null)} title={foodName(getFood(edit.food_id), lang)}>
-      <label className="field">{t('food.quantity')}<input type="number" value={edit.grams ?? ''} onChange={e => setEdit({ ...edit, grams: e.target.value })} /></label>
-      <label className="field">{t('fridge.expiry')}<input type="date" value={edit.expires_on ?? ''} onChange={e => setEdit({ ...edit, expires_on: e.target.value })} /></label>
-      <div className="row"><button className="btn danger grow" onClick={async () => { await remove('fridge_items', edit.id); setEdit(null); }}>{t('fridge.used')}</button>
-        <button className="btn primary grow" onClick={async () => { await update('fridge_items', edit.id, { grams: edit.grams === '' ? null : Number(edit.grams), expires_on: edit.expires_on || null }); setEdit(null); }}>{t('common.save')}</button></div></Modal>}
-  </Page>;
-}
