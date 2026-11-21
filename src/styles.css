@@ -388,3 +388,29 @@ a { color: var(--text); }
 .weekdots span { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: .66rem; font-weight: 700; background: var(--surface-2); color: var(--muted); }
 .weekdots span.on { background: var(--accent); color: var(--accent-ink); }
 .weekdots span.today { outline: 2px solid var(--text); outline-offset: 1px; }
+
+/* =====================================================================
+   No green: white controls, black for selected states (final override)
+   ===================================================================== */
+:root {
+  --accent: #1c1f1a; --accent-strong: #1c1f1a; --accent-ink: #ffffff; --accent-mid: #d6d9d1; --accent-soft: #f3f4f1;
+  --green: #1c1f1a; --green-dark: #1c1f1a; --green-darker: #000000; --green-soft: #f3f4f1; --sage: #d6d9d1; --c-fiber: #8a9283; --c-kcal: #1c1f1a;
+  --chart-fill: #c9ccc4;
+  --shadow-accent: 0 6px 18px rgba(20, 25, 15, .14); --shadow-green: 0 6px 18px rgba(20, 25, 15, .14);
+  --bg: #f6f7f5;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --accent: #f2f4ef; --accent-strong: #f2f4ef; --accent-ink: #121410; --accent-mid: #3a4034; --green: #f2f4ef; --green-dark: #f2f4ef; --green-darker: #ffffff; --chart-fill: #4a5143; --c-kcal: #f2f4ef;
+} }
+:root[data-theme="dark"] {
+  --accent: #f2f4ef; --accent-strong: #f2f4ef; --accent-ink: #121410; --accent-mid: #3a4034; --green: #f2f4ef; --green-dark: #f2f4ef; --green-darker: #ffffff; --chart-fill: #4a5143; --c-kcal: #f2f4ef;
+}
+/* the big round/square action buttons are white with a dark icon */
+.fab, .limebtn, .playbtn, .coachgo, .coachavatar, .sendbtn, .avatar { background: var(--surface); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow-accent); }
+.fab { border: 4px solid var(--surface); outline: 1px solid var(--line); }
+@media (min-width: 960px) { .fab { background: var(--text); color: var(--surface); outline: 0; } }
+.nav a.active .navicon { background: var(--surface-2); color: var(--text); }
+.btn.primary { background: var(--text); color: var(--surface) !important; }
+.badge.lav { background: var(--surface-2); color: var(--text); }
+.small a, p a, .tiny a, .banner a { color: var(--text); }
+.weekdots span.on { background: var(--text); color: var(--surface); }

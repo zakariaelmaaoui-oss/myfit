@@ -190,7 +190,7 @@ export function AreaChart({ values, labels, selected, onSelect, unit = '' }: { v
   const sx = x(selected), sy = y(values[selected] ?? 0);
   return <div className="areachart">
     <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: '100%', height: 170 }} aria-hidden="true">
-      <defs><linearGradient id="agrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--accent)" stopOpacity=".75" /><stop offset="100%" stopColor="var(--accent)" stopOpacity=".05" /></linearGradient></defs>
+      <defs><linearGradient id="agrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="var(--chart-fill)" stopOpacity=".9" /><stop offset="100%" stopColor="var(--chart-fill)" stopOpacity=".1" /></linearGradient></defs>
       {[0.25, 0.5, 0.75].map(f => <line key={f} x1={P} x2={W - P} y1={top + (bottom - top) * f} y2={top + (bottom - top) * f} stroke="var(--line)" strokeDasharray="3 4" strokeWidth=".8" />)}
       <rect x={sx - 11} y={sy - 6} width={22} height={bottom - sy + 6} rx={11} fill="var(--accent-strong)" opacity=".9" />
       <path d={area} fill="url(#agrad)" /><path d={d} fill="none" stroke="var(--accent-strong)" strokeWidth="2.2" />

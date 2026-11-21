@@ -20,7 +20,7 @@ for (const f of readdirSync('supabase/migrations').sort()) await db.exec(readFil
 ok(true, 'migration applied');
 await db.exec(readFileSync('supabase/seed.sql', 'utf8'));
 const c = await db.query('select (select count(*) from public.foods) f, (select count(*) from public.recipes) r, (select count(*) from public.recipe_ingredients) i');
-ok(Number(c.rows[0].f) === 211 && Number(c.rows[0].r) === 50, `seed loaded: ${JSON.stringify(c.rows[0])}`);
+ok(Number(c.rows[0].f) === 211 && Number(c.rows[0].r) === 80, `seed loaded: ${JSON.stringify(c.rows[0])}`);
 const pot = await db.query(`select kcal from public.food_nutrients where food_id = 'potato_boiled'`);
 ok(Number(pot.rows[0].kcal) === 86, 'boiled potato = 86 kcal / 100 g (USDA FDC 170440)');
 await db.exec(`grant select, insert, update, delete on all tables in schema public to authenticated; grant select on all tables in schema public to anon; grant select, insert, delete on storage.objects to authenticated; grant execute on function public.delete_my_account() to authenticated;`);
