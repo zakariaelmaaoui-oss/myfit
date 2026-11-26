@@ -3,3 +3,5 @@ dist
 .env
 .env.local
 e2e/screenshots
+*.tsbuildinfo
+.vercel

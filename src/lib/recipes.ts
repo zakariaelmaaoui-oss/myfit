@@ -1,6 +1,6 @@
-import { RECIPES, type Recipe } from '../data/recipes';
-import { getFood } from './foods';
-import { costFor, recipeNutrition, round, type SumResult } from './nutrition';
+import { RECIPES, type Recipe } from '../data/recipes.js';
+import { getFood } from './foods.js';
+import { costFor, recipeNutrition, round, type SumResult } from './nutrition.js';
 
 const OVERRIDE: Record<string, string> = {
   tomato_paste: 'tomato_paste', orange_juice: 'orange_juice', apple_juice: 'apple_juice', green_beans: 'green_beans', sweet_potato: 'sweet_potato',
