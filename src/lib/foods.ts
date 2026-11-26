@@ -1,5 +1,5 @@
-import raw from '../data/foods.json';
-import type { Nutrients } from './nutrition';
+import raw from '../data/foods.data.js';
+import type { Nutrients } from './nutrition.js';
 
 export type FoodCategory = 'vegetables' | 'fruits' | 'meat' | 'chicken' | 'fish' | 'eggs' | 'dairy' | 'cereals' | 'bread'
   | 'legumes' | 'nuts' | 'oils' | 'packaged' | 'drinks' | 'spices' | 'custom';
@@ -63,12 +63,19 @@ export function normalize(s: string): string {
 export function searchFoods(q: string, category?: string): Food[] {
   const n = normalize(q);
   const terms = n.split(/\s+/).filter(Boolean);
-  return allFoods().filter(f => {
-    if (category && category !== 'all' && f.category !== category) return false;
-    if (!terms.length) return true;
-    const hay = normalize([f.name.en, f.name.fr, f.name.ar, f.usdaDescription ?? '', f.brand ?? '', f.barcode ?? ''].join(' '));
-    return terms.every(t => hay.includes(t));
-  });
+  const scored: [Food, number][] = [];
+  for (const f of allFoods()) {
+    if (category && category !== 'all' && f.category !== category) continue;
+    const names = [f.name.en, f.name.fr, f.name.ar].map(normalize);
+    const hay = normalize([...names, f.usdaDescription ?? '', f.brand ?? '', f.barcode ?? ''].join(' '));
+    if (terms.length && !terms.every(t => hay.includes(t))) continue;
+    // rank: whole-word matches first, then names that start with the query, then shorter names
+    const words = names.join(' ').split(/[^\p{L}\p{N}]+/u);
+    let s = 0;
+    for (const t of terms) { if (words.includes(t) || words.includes(t + 's')) s += 10; if (names.some(x => x.startsWith(t))) s += 5; }
+    scored.push([f, s - names[0].length / 100]);
+  }
+  return scored.sort((a, b) => b[1] - a[1]).map(x => x[0]);
 }
 
 export const HIGH_ADDED_SUGAR_G = 10; // per 100 g — used to flag products in the sugar tracker

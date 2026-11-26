@@ -43,6 +43,21 @@ const POSES: Record<string, { a: J; b: J; period?: number; ground?: number }> = 
   running: { ground: 94, period: 700,
     a: [[54, 14], [52, 24], [44, 32], [46, 42], [60, 30], [64, 22], [50, 52], [60, 64], [54, 80], [42, 70], [34, 84]],
     b: [[54, 14], [52, 24], [60, 30], [64, 22], [44, 32], [46, 42], [50, 52], [42, 70], [34, 84], [60, 64], [54, 80]] },
+  press: { ground: 92,
+    a: [[50, 14], [50, 24], [40, 30], [41, 20], [60, 30], [59, 20], [50, 52], [49, 70], [48, 90], [51, 70], [52, 90]],
+    b: [[50, 14], [50, 24], [44, 12], [46, 2], [56, 12], [54, 2], [50, 52], [49, 70], [48, 90], [51, 70], [52, 90]] },
+  curl: { ground: 92,
+    a: [[50, 14], [50, 24], [49, 38], [51, 52], [52, 38], [54, 52], [50, 52], [49, 70], [48, 90], [51, 70], [52, 90]],
+    b: [[50, 14], [50, 24], [49, 38], [56, 28], [52, 38], [59, 28], [50, 52], [49, 70], [48, 90], [51, 70], [52, 90]] },
+  hinge: { ground: 92,
+    a: [[52, 14], [51, 24], [51, 38], [52, 52], [53, 38], [54, 52], [49, 52], [50, 70], [48, 90], [51, 70], [50, 90]],
+    b: [[73, 32], [65, 36], [65, 48], [65, 60], [66, 48], [66, 60], [44, 50], [50, 70], [48, 90], [51, 70], [50, 90]] },
+  row: { ground: 92,
+    a: [[73, 32], [65, 36], [65, 48], [65, 60], [66, 48], [66, 60], [44, 50], [50, 70], [48, 90], [51, 70], [50, 90]],
+    b: [[73, 32], [65, 36], [56, 34], [60, 46], [57, 34], [61, 46], [44, 50], [50, 70], [48, 90], [51, 70], [50, 90]] },
+  bench: { ground: 92,
+    a: [[18, 66], [27, 68], [27, 56], [27, 44], [28, 56], [28, 44], [56, 70], [70, 66], [76, 90], [71, 66], [77, 90]],
+    b: [[18, 66], [27, 68], [19, 74], [27, 60], [20, 74], [28, 60], [56, 70], [70, 66], [76, 90], [71, 66], [77, 90]] },
 };
 const ALIAS: Record<string, string> = { wall_pushups: 'pushup', pushups: 'pushup', sumo_squats: 'squat', squats: 'squat', jump_squats: 'squat', wall_sit: 'squat',
   lunges: 'lunge', side_plank: 'plank', star_jumps: 'jumping_jacks', skater_jumps: 'jumping_jacks', jog_in_place: 'high_knees', butt_kicks: 'high_knees',
@@ -52,7 +67,7 @@ export const hasFigure = (id: string) => !!POSES[ALIAS[id] ?? id];
 
 const BONES: [number, number][] = [[0, 1], [1, 2], [2, 3], [1, 4], [4, 5], [1, 6], [6, 7], [7, 8], [6, 9], [9, 10]];
 export function ExerciseFigure({ id, size = 160 }: { id: string; size?: number }) {
-  const pose = POSES[ALIAS[id] ?? id] ?? POSES.squat; const period = pose.period ?? 1800;
+  const key = POSES[ALIAS[id] ?? id] ? (ALIAS[id] ?? id) : 'squat'; const pose = POSES[key]; const period = pose.period ?? 1800;
   const [t, setT] = useState(0); const raf = useRef(0); const u = useId().replace(/:/g, '');
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -66,7 +81,8 @@ export function ExerciseFigure({ id, size = 160 }: { id: string; size?: number }
       <filter id={`fig-glow${u}`}><feGaussianBlur stdDeviation="1.4" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter></defs>
     <ellipse cx="50" cy={(pose.ground ?? 92) + 2} rx="36" ry="3" fill="rgba(139,92,246,.25)" />
     <line x1="8" x2="92" y1={(pose.ground ?? 92) + 1} y2={(pose.ground ?? 92) + 1} stroke="rgba(56,189,248,.3)" strokeDasharray="2 3" />
-    {id === 'pullup' && <line x1="20" x2="80" y1="7" y2="7" stroke="#64748b" strokeWidth="2" />}
+    {key === 'bench' && <rect x="14" y="72" width="46" height="4" rx="2" fill="#334155" />}
+    {key === 'pullup' && <line x1="20" x2="80" y1="7" y2="7" stroke="#64748b" strokeWidth="2" />}
     <g filter={`url(#fig-glow${u})`} stroke={`url(#fig-g${u})`} strokeWidth="4.2" strokeLinecap="round" fill="none">
       {BONES.map(([a, b], i) => <line key={i} x1={J[a][0]} y1={J[a][1]} x2={J[b][0]} y2={J[b][1]} />)}
       <circle cx={J[0][0]} cy={J[0][1]} r="5.5" fill="rgba(8,12,26,.9)" />

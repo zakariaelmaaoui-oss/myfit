@@ -10,7 +10,7 @@ export interface Recipe {
   id: string; name: L3; moroccan: boolean; meals: Meal[]; kind: 'main' | 'soup' | 'salad' | 'bread' | 'breakfast' | 'snack' | 'dessert' | 'drink';
   servings: number; serving: L3; prepMin: number; cookMin: number; budget?: boolean;
   ingredients: RecipeIngredient[]; steps: { en: string[]; fr: string[]; ar: string[] };
-  variantOf?: string; variant?: L3; note?: L3;
+  variantOf?: string; variant?: L3; note?: L3; cuisine?: string; costMad?: number;
 }
 
 const ing = (s: string): RecipeIngredient[] => s.trim().split(/\s+/).map(p => {
@@ -424,7 +424,7 @@ export const RECIPES: Recipe[] = [
   },
   // ---------- International ----------
   {
-    id: 'potato_tomato_eggs', moroccan: false, meals: ['breakfast', 'lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 portion (≈410 g)', '1 portion (≈410 g)', 'حصة (≈410 غ)'),
+    id: 'potato_tomato_eggs', moroccan: false, cuisine: 'mediterranean', meals: ['breakfast', 'lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 portion (≈410 g)', '1 portion (≈410 g)', 'حصة (≈410 غ)'),
     prepMin: 10, cookMin: 20, budget: true,
     name: S('Potato, tomato & onion skillet with eggs', 'Poêlée pommes de terre, tomates, oignon et œufs', 'مقلاة البطاطس والطماطم والبصل بالبيض'),
     ingredients: ing('potato_raw:300 tomato:200 onion:100 egg:200 olive_oil:15 paprika:2 cumin:1 salt:3'),
@@ -435,7 +435,7 @@ export const RECIPES: Recipe[] = [
     },
   },
   {
-    id: 'tortilla', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 3, serving: S('1/3 omelette (≈220 g)', '1/3 d’omelette (≈220 g)', 'ثلث العجة (≈220 غ)'),
+    id: 'tortilla', moroccan: false, cuisine: 'spanish', meals: ['lunch', 'dinner'], kind: 'main', servings: 3, serving: S('1/3 omelette (≈220 g)', '1/3 d’omelette (≈220 g)', 'ثلث العجة (≈220 غ)'),
     prepMin: 10, cookMin: 25, budget: true,
     name: S('Potato omelette (tortilla)', 'Omelette aux pommes de terre (tortilla)', 'عجة البطاطس'),
     ingredients: ing('egg:250 potato_raw:300 onion:100 olive_oil:20 salt:3'),
@@ -446,7 +446,7 @@ export const RECIPES: Recipe[] = [
     },
   },
   {
-    id: 'chicken_rice_bowl', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 bowl (≈450 g)', '1 bol (≈450 g)', 'زلافة (≈450 غ)'),
+    id: 'chicken_rice_bowl', moroccan: false, cuisine: 'mediterranean', meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 bowl (≈450 g)', '1 bol (≈450 g)', 'زلافة (≈450 غ)'),
     prepMin: 10, cookMin: 25,
     name: S('Chicken, rice & vegetable bowl', 'Bol poulet, riz et légumes', 'زلافة الدجاج والأرز والخضر'),
     ingredients: ing('chicken_breast_raw:300 rice_white_raw:150 broccoli:200 carrot:100 olive_oil:15 garlic:5 salt:3 black_pepper:1'),
@@ -457,7 +457,7 @@ export const RECIPES: Recipe[] = [
     },
   },
   {
-    id: 'tuna_salad', moroccan: false, meals: ['lunch', 'dinner'], kind: 'salad', servings: 2, serving: S('1 large plate (≈480 g)', '1 grande assiette (≈480 g)', 'صحن كبير (≈480 غ)'),
+    id: 'tuna_salad', moroccan: false, cuisine: 'mediterranean', meals: ['lunch', 'dinner'], kind: 'salad', servings: 2, serving: S('1 large plate (≈480 g)', '1 grande assiette (≈480 g)', 'صحن كبير (≈480 غ)'),
     prepMin: 15, cookMin: 20, budget: true,
     name: S('Tuna, potato & egg salad', 'Salade thon, pommes de terre et œuf', 'شلاضة التون والبطاطس والبيض'),
     ingredients: ing('tuna_water:160 potato_boiled:200 egg_boiled:100 tomato:150 cucumber:150 lettuce:100 onion:40 olives_black:30 olive_oil:15 lemon_juice:15'),
@@ -468,70 +468,70 @@ export const RECIPES: Recipe[] = [
     },
   },
   {
-    id: 'greek_yogurt_bowl', moroccan: false, meals: ['breakfast', 'snack'], kind: 'breakfast', servings: 1, serving: S('1 bowl (≈335 g)', '1 bol (≈335 g)', 'زلافة (≈335 غ)'),
+    id: 'greek_yogurt_bowl', moroccan: false, cuisine: 'mediterranean', meals: ['breakfast', 'snack'], kind: 'breakfast', servings: 1, serving: S('1 bowl (≈335 g)', '1 bol (≈335 g)', 'زلافة (≈335 غ)'),
     prepMin: 5, cookMin: 0,
     name: S('Greek yogurt, strawberries & walnuts', 'Yaourt grec, fraises et noix', 'ياغورت يوناني بالفراولة والكركاع'),
     ingredients: ing('greek_yogurt_nonfat:200 strawberry:100 walnuts:15 oats:20'),
     steps: { en: ['Layer yogurt, sliced strawberries, oats and chopped walnuts.'], fr: ['Superposer yaourt, fraises, flocons d’avoine et noix concassées.'], ar: ['رتبي الياغورت والفراولة والشوفان والكركاع المكسر.'] },
   },
   {
-    id: 'overnight_oats', moroccan: false, meals: ['breakfast'], kind: 'breakfast', servings: 1, serving: S('1 jar (≈360 g)', '1 bocal (≈360 g)', 'برطمان (≈360 غ)'),
+    id: 'overnight_oats', moroccan: false, cuisine: 'american', meals: ['breakfast'], kind: 'breakfast', servings: 1, serving: S('1 jar (≈360 g)', '1 bocal (≈360 g)', 'برطمان (≈360 غ)'),
     prepMin: 5, cookMin: 0, budget: true,
     name: S('Overnight oats with banana', 'Porridge froid à la banane', 'شوفان منقوع بالموز'),
     ingredients: ing('oats:50 milk_semi:200 banana:100 chia:10 cinnamon:1'),
     steps: { en: ['Mix oats, chia, cinnamon and milk in a jar; refrigerate overnight.', 'Top with sliced banana in the morning.'], fr: ['Mélanger flocons, chia, cannelle et lait dans un bocal ; réfrigérer une nuit.', 'Ajouter la banane le matin.'], ar: ['اخلطي الشوفان والشيا والقرفة والحليب في برطمان واتركيه في الثلاجة ليلة.', 'أضيفي الموز صباحا.'] },
   },
   {
-    id: 'pasta_tomato', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('1 plate (≈265 g)', '1 assiette (≈265 g)', 'صحن (≈265 غ)'),
+    id: 'pasta_tomato', moroccan: false, cuisine: 'italian', meals: ['lunch', 'dinner'], kind: 'main', servings: 4, serving: S('1 plate (≈265 g)', '1 assiette (≈265 g)', 'صحن (≈265 غ)'),
     prepMin: 10, cookMin: 20, budget: true,
     name: S('Pasta with fresh tomato sauce', 'Pâtes à la sauce tomate maison', 'معكرونة بصلصة الطماطم'),
     ingredients: ing('pasta_dry:320 tomato:600 onion:100 garlic:10 olive_oil:30 salt:5 black_pepper:1'),
     steps: { en: ['Cook tomatoes, onion, garlic and oil 15 minutes.', 'Cook pasta in salted water as per package; drain.', 'Mix pasta with the sauce.'], fr: ['Cuire tomates, oignon, ail et huile 15 minutes.', 'Cuire les pâtes selon le paquet ; égoutter.', 'Mélanger avec la sauce.'], ar: ['اطهي الطماطم والبصل والثوم والزيت 15 دقيقة.', 'اسلقي المعكرونة حسب العلبة وصفيها.', 'اخلطيها مع الصلصة.'] },
   },
   {
-    id: 'baked_salmon', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 plate (≈490 g)', '1 assiette (≈490 g)', 'صحن (≈490 غ)'),
+    id: 'baked_salmon', moroccan: false, cuisine: 'french', meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 plate (≈490 g)', '1 assiette (≈490 g)', 'صحن (≈490 غ)'),
     prepMin: 10, cookMin: 30,
     name: S('Baked salmon with vegetables', 'Saumon au four et légumes', 'سلمون في الفرن مع الخضر'),
     ingredients: ing('salmon_raw:300 potato_raw:300 zucchini:200 pepper_red:150 olive_oil:15 lemon_juice:15 garlic:5 salt:3'),
     steps: { en: ['Roast sliced potatoes with half the oil at 200 °C for 15 minutes.', 'Add zucchini, pepper and salmon; drizzle with remaining oil, garlic and lemon.', 'Bake 15 more minutes.'], fr: ['Rôtir les pommes de terre avec la moitié de l’huile à 200 °C 15 minutes.', 'Ajouter courgette, poivron et saumon ; arroser du reste d’huile, ail et citron.', 'Cuire encore 15 minutes.'], ar: ['اشوي البطاطس بنصف الزيت في 200 درجة 15 دقيقة.', 'أضيفي الكوسة والفلفل والسلمون مع باقي الزيت والثوم والحامض.', 'اخبزيه 15 دقيقة أخرى.'] },
   },
   {
-    id: 'lentil_salad', moroccan: false, meals: ['lunch', 'dinner'], kind: 'salad', servings: 3, serving: S('1 bowl (≈290 g)', '1 bol (≈290 g)', 'زلافة (≈290 غ)'),
+    id: 'lentil_salad', moroccan: false, cuisine: 'french', meals: ['lunch', 'dinner'], kind: 'salad', servings: 3, serving: S('1 bowl (≈290 g)', '1 bol (≈290 g)', 'زلافة (≈290 غ)'),
     prepMin: 15, cookMin: 0, budget: true,
     name: S('Lentil salad', 'Salade de lentilles', 'شلاضة العدس'),
     ingredients: ing('lentils_cooked:450 tomato:150 cucumber:150 onion:50 parsley:15 olive_oil:20 lemon_juice:20 cumin:2 salt:3'),
     steps: { en: ['Mix cooled cooked lentils with diced vegetables and parsley.', 'Dress with oil, lemon, cumin and salt.'], fr: ['Mélanger les lentilles cuites refroidies avec les légumes et le persil.', 'Assaisonner d’huile, citron, cumin et sel.'], ar: ['اخلطي العدس المطبوخ البارد مع الخضر والمعدنوس.', 'أضيفي الزيت والحامض والكمون والملح.'] },
   },
   {
-    id: 'chickpea_salad', moroccan: false, meals: ['lunch', 'dinner'], kind: 'salad', servings: 3, serving: S('1 bowl (≈290 g)', '1 bol (≈290 g)', 'زلافة (≈290 غ)'),
+    id: 'chickpea_salad', moroccan: false, cuisine: 'middle_eastern', meals: ['lunch', 'dinner'], kind: 'salad', servings: 3, serving: S('1 bowl (≈290 g)', '1 bol (≈290 g)', 'زلافة (≈290 غ)'),
     prepMin: 15, cookMin: 0, budget: true,
     name: S('Chickpea salad', 'Salade de pois chiches', 'شلاضة الحمص'),
     ingredients: ing('chickpeas_cooked:400 tomato:150 cucumber:150 pepper_red:100 onion:40 parsley:15 olive_oil:20 lemon_juice:20 salt:3'),
     steps: { en: ['Combine chickpeas with chopped vegetables and parsley.', 'Dress with oil, lemon and salt.'], fr: ['Mélanger les pois chiches avec les légumes et le persil.', 'Assaisonner d’huile, citron et sel.'], ar: ['اخلطي الحمص مع الخضر المقطعة والمعدنوس.', 'أضيفي الزيت والحامض والملح.'] },
   },
   {
-    id: 'fruit_salad', moroccan: false, meals: ['snack', 'breakfast'], kind: 'dessert', servings: 4, serving: S('1 bowl (≈225 g)', '1 bol (≈225 g)', 'زلافة (≈225 غ)'),
+    id: 'fruit_salad', moroccan: false, cuisine: 'mediterranean', meals: ['snack', 'breakfast'], kind: 'dessert', servings: 4, serving: S('1 bowl (≈225 g)', '1 bol (≈225 g)', 'زلافة (≈225 غ)'),
     prepMin: 15, cookMin: 0, budget: true,
     name: S('Fresh fruit salad', 'Salade de fruits frais', 'سلطة الفواكه'),
     ingredients: ing('orange:300 apple:200 banana:200 pomegranate:100 orange_juice:100 cinnamon:1 mint:5'),
     steps: { en: ['Dice fruit, add pomegranate seeds.', 'Pour orange juice over, sprinkle cinnamon and mint. No added sugar.'], fr: ['Couper les fruits, ajouter les grains de grenade.', 'Arroser de jus d’orange, parsemer de cannelle et menthe. Sans sucre ajouté.'], ar: ['قطعي الفواكه وأضيفي حب الرمان.', 'أضيفي عصير البرتقال والقرفة والنعناع. بدون سكر مضاف.'] },
   },
   {
-    id: 'hummus_snack', moroccan: false, meals: ['snack'], kind: 'snack', servings: 2, serving: S('1 plate (≈230 g)', '1 assiette (≈230 g)', 'صحن (≈230 غ)'),
+    id: 'hummus_snack', moroccan: false, cuisine: 'middle_eastern', meals: ['snack'], kind: 'snack', servings: 2, serving: S('1 plate (≈230 g)', '1 assiette (≈230 g)', 'صحن (≈230 غ)'),
     prepMin: 5, cookMin: 0,
     name: S('Hummus with vegetable sticks', 'Houmous et bâtonnets de légumes', 'حمص بالطحينة مع أصابع الخضر'),
     ingredients: ing('hummus:100 carrot:150 cucumber:150 bread_pita:60'),
     steps: { en: ['Cut carrots and cucumber into sticks; serve with hummus and pita.'], fr: ['Couper carottes et concombre en bâtonnets ; servir avec houmous et pita.'], ar: ['قطعي الجزر والخيار أصابع وقدميها مع الحمص والخبز.'] },
   },
   {
-    id: 'egg_fried_rice', moroccan: false, meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 plate (≈390 g)', '1 assiette (≈390 g)', 'صحن (≈390 غ)'),
+    id: 'egg_fried_rice', moroccan: false, cuisine: 'asian', meals: ['lunch', 'dinner'], kind: 'main', servings: 2, serving: S('1 plate (≈390 g)', '1 assiette (≈390 g)', 'صحن (≈390 غ)'),
     prepMin: 10, cookMin: 12, budget: true,
     name: S('Egg & vegetable fried rice', 'Riz sauté aux œufs et légumes', 'أرز مقلي بالبيض والخضر'),
     ingredients: ing('rice_white_cooked:400 egg:100 peas_green:100 carrot:100 onion:60 sunflower_oil:15 salt:3'),
     steps: { en: ['Sauté onion and diced carrot in oil 4 minutes; add peas.', 'Push aside, scramble the eggs, then add rice and stir-fry 4 minutes. Season.'], fr: ['Faire sauter oignon et carotte dans l’huile 4 minutes ; ajouter les pois.', 'Pousser de côté, brouiller les œufs, puis ajouter le riz et sauter 4 minutes. Assaisonner.'], ar: ['شوحي البصل والجزر في الزيت 4 دقائق ثم أضيفي الجلبانة.', 'أبعديها جانبا واخفقي البيض ثم أضيفي الأرز وقلبيه 4 دقائق.'] },
   },
   {
-    id: 'spinach_omelette', moroccan: false, meals: ['breakfast', 'dinner'], kind: 'breakfast', servings: 1, serving: S('1 omelette (≈245 g)', '1 omelette (≈245 g)', 'عجة واحدة (≈245 غ)'),
+    id: 'spinach_omelette', moroccan: false, cuisine: 'french', meals: ['breakfast', 'dinner'], kind: 'breakfast', servings: 1, serving: S('1 omelette (≈245 g)', '1 omelette (≈245 g)', 'عجة واحدة (≈245 غ)'),
     prepMin: 5, cookMin: 6,
     name: S('Spinach & feta omelette', 'Omelette épinards et feta', 'عجة بالسبانخ والفيتا'),
     ingredients: ing('egg:150 spinach:60 cheese_feta:30 olive_oil:5'),
@@ -720,6 +720,8 @@ RECIPES.push(
     ['Grate the cucumber into the yogurt, add chopped mint and a pinch of salt.'], ['Râpez le concombre dans le yaourt, ajoutez menthe et sel.'], ['احككي الخيار في الياغورت وأضيفي النعناع وقليلا من الملح.'], { budget: true }),
 );
 
+import { WORLD_RECIPES } from './recipes_world.js';
+RECIPES.push(...WORLD_RECIPES);
 export function getRecipe(id: string) { return RECIPES.find(r => r.id === id); }
 export function recipeName(r: Recipe, lang: string) { return (r.name as any)[lang === 'dar' ? 'ar' : lang] || r.name.en; }
 export function l3(v: L3 | undefined, lang: string) { if (!v) return ''; return (v as any)[lang === 'dar' ? 'ar' : lang] || v.en; }

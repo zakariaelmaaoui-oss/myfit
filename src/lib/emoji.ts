@@ -1,5 +1,5 @@
-import type { Food } from './foods';
-import type { Recipe } from '../data/recipes';
+import type { Food } from './foods.js';
+import type { Recipe } from '../data/recipes.js';
 
 // Decorative emoji for foods and recipes (purely visual; no data meaning).
 const BY_FAMILY: [RegExp, string][] = [

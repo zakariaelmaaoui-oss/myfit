@@ -1,4 +1,5 @@
-[
+// USDA FoodData Central (SR Legacy) reference foods — generated from foods.json, do not edit by hand.
+const FOODS: any[] = [
 {
 "id": "potato_boiled",
 "fdcId": 170440,
@@ -7694,4 +7695,5 @@
 ],
 "source": "USDA FoodData Central, SR Legacy (April 2018)"
 }
-]
+];
+export default FOODS;

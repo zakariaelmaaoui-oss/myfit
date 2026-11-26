@@ -1,0 +1,15 @@
+# Hourly trigger for SHADOW FIT motivation pushes (Vercel's free plan only allows daily crons).
+# Needs two repository secrets: SHADOW_FIT_URL (e.g. https://myfit-3lar.vercel.app) and CRON_SECRET (same value as in Vercel).
+name: notify
+on:
+  schedule: [{ cron: '5 * * * *' }]
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call /api/notify
+        env: { URL: '${{ secrets.SHADOW_FIT_URL }}', SECRET: '${{ secrets.CRON_SECRET }}' }
+        run: |
+          if [ -z "$URL" ] || [ -z "$SECRET" ]; then echo "secrets not set — skipping"; exit 0; fi
+          curl -fsS -H "Authorization: Bearer $SECRET" "$URL/api/notify"

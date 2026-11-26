@@ -1,1 +1,13 @@
-{ "rewrites": [{ "source": "/((?!api/|assets/|icon.svg).*)", "destination": "/index.html" }] }
+{
+  "rewrites": [{ "source": "/((?!api/|assets/|icon.svg|sw.js|manifest.webmanifest).*)", "destination": "/index.html" }],
+  "crons": [{ "path": "/api/notify", "schedule": "5 7 * * *" }],
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self), geolocation=()" }
+    ]},
+    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+  ]
+}

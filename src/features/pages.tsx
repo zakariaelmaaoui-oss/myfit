@@ -1,161 +1,164 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Holo, Icon, NeonLine, NeonRing, Radar, RankBadge, RANK_COLORS, StatBar, XPBar } from '../design';
-import { ExerciseFigure } from '../design/ExerciseFigure';
-import { PREVIEW } from '../app/preview';
-import { QuestRow } from './home';
-import { RECIPES, recipeName } from '../data/recipes';
-import { recipeInfo } from '../lib/recipes';
-import { recipeEmoji } from '../lib/emoji';
+import { useEffect, useMemo, useState } from 'react';
+import { Holo, Icon, NeonLine, NeonRing, Radar, RankBadge, XPBar, RANK_COLORS } from '../design';
+import { supabase } from '../lib/supabase';
+import { addDays, isoDate } from '../lib/nutrition';
+import { ACHIEVEMENTS } from '../core/game';
+import * as E from '../core/engine';
+import { api, ApiError, today } from '../app/api';
+import { useHunter } from '../app/store';
+import { Modal, Num, Busy, useBusy, fmt, Spinner, Field } from '../app/ui';
+import { QuestRow, attrs } from './home';
+import { ProfileFields, TargetsPreview, type ProfileDraft } from './awaken';
+import { t, setLang, type Lang } from '../app/i18n';
+import { enablePush, disablePush, pushSupported, VAPID_PUBLIC } from '../app/push';
 
 // ================= QUESTS =================
 export function Quests() {
-  const { quests, weekly, achievements, hunter } = PREVIEW; const done = quests.filter(q => q.done).length; const xpLeft = quests.filter(q => !q.done).reduce((a, q) => a + q.xp, 0);
+  const { h, act } = useHunter(); const [busy, run] = useBusy(); const [title, setTitle] = useState(''); const [xp, setXp] = useState<number | ''>(15);
+  if (!h) return <Spinner />;
+  const done = h.quests.filter(q => q.status === 'done').length;
   return <div className="space-y-5 animate-rise">
-    <div className="text-center pt-2"><div className="label text-neon-cyan animate-flicker">[ Quest info ]</div><h1 className="display font-black text-2xl sm:text-3xl text-sky-50 glow-text mt-1">DAILY QUEST</h1>
-      <p className="text-slate-400 text-sm mt-1">Training to become a stronger hunter has arrived.</p></div>
-    <Holo scan className="max-w-2xl mx-auto w-full" title="Goals" right={<span className="display text-xs text-sky-200">{done}/{quests.length} · {xpLeft} XP left</span>}>
-      {quests.map(q => <QuestRow key={q.id} q={q} />)}
-      <div className="mt-4 rounded-xl border border-violet-400/30 bg-violet-500/[.07] px-4 py-3 text-sm"><span className="label !text-violet-300">Reward</span> · Complete all quests: <b className="text-violet-200">+60 XP bonus</b> and your streak continues ({hunter.streak} 🔥).
-        <div className="text-[12px] text-slate-400 mt-1">No penalty for missing a quest — rest and recovery are part of growing stronger.</div></div>
+    <div><div className="label text-neon-cyan">[ System · Quest log ]</div><h1 className="display font-black text-2xl sm:text-3xl text-sky-50 glow-text">{t('quests').toUpperCase()}</h1></div>
+    <Holo violet scan title={t('dailyQuest')} right={<span className="display text-xs text-sky-200">{done}/{h.quests.length}</span>}>
+      <div className="mb-3"><XPBar value={done} max={h.quests.length} label="Completion" sub={done / Math.max(1, h.quests.length) >= 0.6 ? 'Streak secured 🔥' : `${Math.ceil(h.quests.length * 0.6) - done} more for the streak`} /></div>
+      {h.quests.map(q => <div key={q.id}><QuestRow q={q} onDone={q.kind === 'custom' ? () => run(() => act((sb, u) => E.completeCustomQuest(sb, u, q.id))) : undefined} />
+        {q.instructions && q.status !== 'done' && <div className="text-[11px] text-slate-500 -mt-1.5 mb-1.5 ps-9">{q.instructions}</div>}</div>)}
+      <p className="text-[11px] text-slate-500 mt-2">System quests complete automatically from your real logs (food, water, sets, check-in). Only custom quests can be ticked by hand.</p>
     </Holo>
-    <div className="grid lg:grid-cols-2 gap-5">
-      <Holo violet title="Weekly challenges">{weekly.map(w => <div key={w.title} className="py-3 border-b border-violet-400/10 last:border-0"><div className="flex justify-between font-ui font-bold text-slate-100"><span>{w.title}</span><span className="display text-[11px] text-violet-300">+{w.xp} XP</span></div>
-        <div className="mt-2"><XPBar value={w.progress} max={w.target} sub={`${w.progress.toLocaleString()} / ${w.target.toLocaleString()}`} /></div></div>)}</Holo>
-      <Holo title="Achievements"><div className="grid grid-cols-3 gap-3">{achievements.map(a => <div key={a.name} className={`text-center rounded-xl border p-3 ${a.got ? 'border-sky-300/40 bg-sky-400/[.07] shadow-glow' : 'border-slate-700 opacity-40 grayscale'}`}>
-        <div className={`mx-auto grid place-items-center w-11 h-11 rounded-full ${a.got ? 'bg-gradient-to-br from-sky-400/30 to-violet-500/30 text-sky-100' : 'bg-slate-800 text-slate-500'}`}><Icon n={a.icon} s={20} /></div>
-        <div className="mt-2 text-[11px] font-ui font-bold tracking-wider uppercase">{a.name}</div></div>)}</div></Holo>
-    </div>
-  </div>;
-}
-
-// ================= WORKOUT =================
-export function Workout() {
-  const w = PREVIEW.workout; const [open, setOpen] = useState<string | null>(w.exercises[0].id);
-  return <div className="space-y-5 animate-rise">
-    <Holo violet scan className="!p-5">
-      <div className="flex flex-col sm:flex-row sm:items-end gap-4"><div><div className="label text-neon-cyan">Dungeon · {w.day}</div><h1 className="display font-black text-3xl text-sky-50 glow-text">{w.name}</h1>
-        <div className="text-slate-400 text-sm mt-1">{w.minutes} min · {w.exercises.length} exercises · Home · No equipment</div></div>
-        <button className="neon-btn sm:ml-auto"><Icon n="play" s={18} />Start session</button></div>
-      <div className="mt-5 grid grid-cols-7 gap-1.5">{w.week.map(d => <div key={d.d} className={`rounded-lg border text-center py-2 ${d.today ? 'border-sky-300 bg-sky-400/15 shadow-glow' : d.done ? 'border-emerald-400/40 bg-emerald-400/10' : 'border-slate-700/70'}`}>
-        <div className="label !text-[10px]">{d.d}</div><div className={`font-ui font-bold text-xs mt-0.5 ${d.t === 'Rest' ? 'text-slate-500' : 'text-slate-100'}`}>{d.done ? '✔' : d.t}</div></div>)}</div>
+    <Holo title={t('newQuest')}>
+      <div className="flex flex-wrap items-end gap-2"><Field label="Quest"><input className="field" maxLength={80} value={title} onChange={e => setTitle(e.target.value)} placeholder="Cook dinner at home, read 10 pages…" /></Field>
+        <Field label="XP (5–30)"><Num value={xp} min={5} max={30} onChange={setXp} className="!w-24" /></Field>
+        <Busy busy={busy} className="neon-btn" disabled={!title.trim()} onClick={() => run(async () => { await act((sb, u, d) => E.createCustomQuest(sb, u, d, { title: title.trim(), xp: Number(xp) || 15 }, 'user')); setTitle(''); })}><Icon n="plus" s={16} />{t('add')}</Busy></div>
+      <p className="text-[11px] text-slate-500 mt-2">Max 3 custom quests per day. THE SYSTEM can also issue them.</p>
     </Holo>
-    <div className="grid lg:grid-cols-2 gap-4">{w.exercises.map((e, i) => <Holo key={e.id} className="!p-4">
-      <button className="w-full text-left flex items-center gap-4" onClick={() => setOpen(open === e.id ? null : e.id)}>
-        <div className="shrink-0 rounded-xl bg-void-950/60 border border-sky-400/20"><ExerciseFigure id={e.id} size={96} /></div>
-        <div className="flex-1 min-w-0"><div className="label">#{i + 1} · {e.muscles}</div><div className="display text-lg text-sky-50 mt-0.5">{e.name}</div>
-          <div className="flex flex-wrap gap-2 mt-2 text-[12px]"><span className="chip !py-1">{e.sets} × {e.reps}</span><span className="chip !py-1"><Icon n="clock" s={13} />{e.rest}s rest</span><span className="chip !py-1">{'◆'.repeat(e.diff)}{'◇'.repeat(3 - e.diff)}</span></div></div>
-      </button>
-      {open === e.id && <div className="mt-4 animate-rise">
-        <div className="rounded-lg border border-sky-400/20 bg-sky-400/[.05] px-3 py-2 text-[13px] text-sky-100"><span className="label !text-neon-cyan">Evolving hunter</span> · {e.trend}</div>
-        <div className="mt-3 grid grid-cols-3 gap-2">{Array.from({ length: e.sets }, (_, s) => <div key={s} className="rounded-lg border border-slate-700 p-2 text-center"><div className="label">Set {s + 1}</div>
-          <input className="field !min-h-9 !py-1 text-center mt-1" defaultValue={e.reps.replace(/\D/g, '')} aria-label={`Set ${s + 1} reps`} /></div>)}</div>
-        <button className="ghost-btn w-full mt-3"><Icon n="check" s={16} />Complete exercise</button>
-      </div>}
-    </Holo>)}</div>
-    <Holo title="Recovery protocol"><p className="text-sm text-slate-300">Tomorrow is a <b className="text-sky-200">rest day</b>. Muscles grow when you recover: sleep 7–9 h, walk lightly, drink water. Difficulty only increases after 2 strong sessions with good form and recovery.</p></Holo>
-  </div>;
-}
-
-// ================= NUTRITION =================
-export function Nutrition() {
-  const { today, meals } = PREVIEW;
-  return <div className="space-y-5 animate-rise">
-    <div className="grid lg:grid-cols-3 gap-5">
-      <Holo violet scan className="lg:col-span-1 !p-5" title="Energy core">
-        <div className="flex justify-center"><NeonRing value={today.kcal} max={today.target} size={190} stroke={12}><div><div className="display text-4xl text-sky-50 glow-text">{today.target - today.kcal}</div><div className="label">kcal remaining</div><div className="text-xs text-slate-400 mt-1">{today.kcal} eaten · {today.target} target</div></div></NeonRing></div>
-        <div className="mt-5 space-y-3"><StatBar label={`Protein ${today.protein}/${today.proteinTarget} g`} value={Math.round(today.protein / today.proteinTarget * 100)} color="#38bdf8" icon="bolt" />
-          <StatBar label={`Carbs ${today.carbs}/${today.carbsTarget} g`} value={Math.round(today.carbs / today.carbsTarget * 100)} color="#a855f7" icon="flame" />
-          <StatBar label={`Fat ${today.fat}/${today.fatTarget} g`} value={Math.round(today.fat / today.fatTarget * 100)} color="#e879f9" icon="drop" /></div>
-      </Holo>
-      <div className="lg:col-span-2 space-y-4">
-        <div className="grid grid-cols-3 gap-3">{[{ i: 'search', l: 'Search food' }, { i: 'camera', l: 'Photo' }, { i: 'system', l: 'Tell the System' }].map(a => <button key={a.l} className="holo !p-3 flex flex-col items-center gap-2 hover:shadow-glow transition"><div className="corners"><i /><i /><i /><i /></div><Icon n={a.i} s={22} className="text-sky-300" /><span className="label !text-slate-200">{a.l}</span></button>)}</div>
-        {meals.map(m => { const total = m.items.reduce((a, x) => a + x.kcal, 0);
-          return <Holo key={m.meal} title={m.meal} right={<span className="display text-sm text-sky-100">{total} kcal</span>}>
-            {m.items.length ? m.items.map(x => <div key={x.name} className="flex items-center gap-3 py-2 border-b border-sky-400/10 last:border-0"><span className="text-xl">{x.name.includes('egg') ? '🥚' : x.name.includes('Sardine') ? '🐟' : x.name.includes('tagine') ? '🥘' : x.name.includes('salad') ? '🥗' : '🥣'}</span>
-              <div className="flex-1 min-w-0"><div className="text-slate-100 truncate">{x.name}</div><div className="text-[11px] text-slate-500">{x.p} g protein{x.estimate && <span className="ml-2 text-amber-300">· AI estimate</span>}</div></div><span className="display text-sm text-slate-200">{x.kcal}</span></div>)
-              : <div className="flex items-center justify-between text-sm text-slate-400"><span>Not logged yet. Remaining budget fits ≈ 700 kcal.</span><Link to="/library" className="ghost-btn !min-h-9">Ideas</Link></div>}
-          </Holo>; })}
-      </div>
-    </div>
-  </div>;
-}
-
-// ================= FOOD LIBRARY =================
-const CATS = ['All', 'Under 300 kcal', 'Under 500 kcal', 'High protein', 'Budget', 'Quick', 'Vegetarian', 'Breakfast', 'Dinner'];
-const ART = ['from-sky-500/40 to-violet-700/40', 'from-violet-500/40 to-fuchsia-700/40', 'from-cyan-500/40 to-sky-800/40', 'from-indigo-500/40 to-violet-800/40'];
-export function Library() {
-  const [cat, setCat] = useState('All');
-  const list = useMemo(() => RECIPES.map(r => recipeInfo(r)).filter(i => { const k = i.perServing.totals.kcal;
-    return cat === 'All' || (cat === 'Under 300 kcal' && k < 300) || (cat === 'Under 500 kcal' && k < 500) || (cat === 'High protein' && i.highProtein) || (cat === 'Budget' && i.recipe.budget) || (cat === 'Quick' && i.quick) || (cat === 'Vegetarian' && i.vegetarian) || (cat === 'Breakfast' && i.recipe.meals.includes('breakfast')) || (cat === 'Dinner' && i.recipe.meals.includes('dinner')); }).slice(0, 12), [cat]);
-  return <div className="space-y-5 animate-rise">
-    <div><div className="label text-neon-cyan">World cuisine · prioritised for Morocco</div><h1 className="display font-black text-2xl sm:text-3xl text-sky-50 glow-text">FOOD LIBRARY</h1></div>
-    <div className="holo !p-2 flex items-center gap-2"><Icon n="search" s={18} className="ml-2 text-slate-400" /><input className="field !border-0 !bg-transparent" placeholder="Search 80+ recipes — tagine, ramen, tacos…" /></div>
-    <div className="flex gap-2 overflow-x-auto pb-1">{CATS.map(c => <button key={c} className={`chip ${cat === c ? 'on' : ''}`} onClick={() => setCat(c)}>{c}</button>)}</div>
-    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">{list.map((i, k) => <div key={i.recipe.id} className="holo !p-0 group hover:shadow-glow transition">
-      <div className={`relative h-36 bg-gradient-to-br ${ART[k % ART.length]} grid place-items-center overflow-hidden`}><span className="text-6xl drop-shadow-[0_0_18px_rgba(56,189,248,.6)] group-hover:scale-110 transition">{recipeEmoji(i.recipe)}</span>
-        <span className="absolute top-2 left-2 chip !py-0.5 !text-[11px]">{i.recipe.moroccan ? '🇲🇦 Moroccan' : '🌍 International'}</span>
-        <button className="absolute top-2 right-2 grid place-items-center w-8 h-8 rounded-full bg-black/40 text-slate-200" aria-label="Favorite"><Icon n="star" s={16} /></button></div>
-      <div className="p-4"><div className="font-ui font-bold text-lg text-slate-50 leading-tight">{recipeName(i.recipe, 'en')}</div>
-        <div className="grid grid-cols-4 gap-1 mt-3 text-center">{[['kcal', i.perServing.totals.kcal], ['prot', `${Math.round(i.perServing.totals.protein)}g`], ['carb', `${Math.round(i.perServing.totals.carbs)}g`], ['fat', `${Math.round(i.perServing.totals.fat)}g`]].map(([l, v]) =>
-          <div key={l} className="rounded-md bg-void-950/50 border border-sky-400/10 py-1"><div className="display text-sm text-sky-100">{v}</div><div className="label !text-[9px]">{l}</div></div>)}</div>
-        <div className="flex items-center justify-between mt-3 text-[12px] text-slate-400"><span><Icon n="clock" s={13} className="inline -mt-0.5" /> {i.totalMin} min</span><span>{i.recipe.budget ? '💰 Budget' : '💰💰'}</span><button className="ghost-btn !min-h-8 !px-2.5 !text-[11px]"><Icon n="plus" s={14} />Diary</button></div></div>
-    </div>)}</div>
+    <Holo title={t('weekly')}>{h.challenges.map(c => <div key={c.id} className="py-2.5 border-b border-sky-400/10 last:border-0">
+      <div className="flex justify-between"><span className={`font-ui font-bold ${c.status === 'done' ? 'text-emerald-300' : 'text-slate-100'}`}>{c.status === 'done' ? '✔ ' : ''}{c.title}</span><span className="display text-[11px] text-violet-300">+{c.xp} XP</span></div>
+      <div className="flex items-center gap-2 mt-1"><div className="bar h-2 flex-1"><i style={{ width: `${Math.min(100, (Number(c.progress) / Number(c.target)) * 100)}%` }} /></div><span className="text-[11px] text-slate-400">{fmt(c.progress)} / {fmt(c.target)}</span></div></div>)}</Holo>
+    <Holo violet title={t('achievements')} right={<span className="display text-xs text-violet-200">{h.achievements.length}/{ACHIEVEMENTS.length}</span>}>
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">{ACHIEVEMENTS.map(a => { const got = h.achievements.includes(a.key);
+        return <div key={a.key} className={`rounded-xl border p-3 text-center ${got ? 'border-violet-400/50 bg-violet-500/10 shadow-glow-violet' : 'border-slate-700 opacity-45'}`} title={a.desc}>
+          <Icon n={a.icon} s={26} className={got ? 'text-violet-200 mx-auto' : 'text-slate-500 mx-auto'} /><div className="font-ui font-bold text-[12px] mt-1 leading-tight">{a.name}</div><div className="text-[10px] text-slate-500 leading-tight">{a.desc}</div></div>; })}</div>
+    </Holo>
   </div>;
 }
 
 // ================= PROGRESS =================
 export function Progress() {
-  const { weights, weightLabels, kcalWeek, attributes, hunter } = PREVIEW;
+  const { h, act, uid } = useHunter(); const [busy, run] = useBusy();
+  const [hist, setHist] = useState<Awaited<ReturnType<typeof E.history>> | null>(null); const [kg, setKg] = useState<number | ''>(''); const [reports, setReports] = useState<any[]>([]);
+  const [photos, setPhotos] = useState<{ id: string; date: string; url: string; path: string }[]>([]); const [meas, setMeas] = useState<any>({}); const [rbusy, setRbusy] = useState(false); const [rerr, setRerr] = useState('');
+  const load = async () => { if (!uid) return; const d = isoDate();
+    setHist(await E.history(supabase, uid, addDays(d, -119), d));
+    const r = await supabase.from('sf_weekly_reports').select('*').eq('user_id', uid).order('week_start', { ascending: false }).limit(6); setReports(r.data ?? []);
+    const p = await supabase.from('sf_progress_photos').select('*').eq('user_id', uid).order('date', { ascending: false }).limit(12);
+    const signed = await Promise.all((p.data ?? []).map(async x => ({ ...x, url: (await supabase.storage.from('sf-progress').createSignedUrl(x.path, 3600)).data?.signedUrl ?? '' }))); setPhotos(signed);
+    const m = await supabase.from('sf_measurements').select('*').eq('user_id', uid).order('date', { ascending: false }).limit(1); setMeas(m.data?.[0] ?? {}); };
+  useEffect(() => { load(); }, [uid, h?.stats.xp]);
+  const week7 = useMemo(() => { const d = isoDate(); return Array.from({ length: 7 }, (_, i) => addDays(d, i - 6)).map(x => ({ d: x, kcal: hist?.nutrition.find(n => n.date === x)?.kcal ?? 0 })); }, [hist]);
+  if (!h || !hist) return <Spinner />;
+  const w = hist.weights; const tk = h.target?.kcal ?? 2000; const maxK = Math.max(tk * 1.2, ...week7.map(x => x.kcal));
+  const logged = week7.filter(x => x.kcal > 0); const avg = logged.length ? Math.round(logged.reduce((a, x) => a + x.kcal, 0) / logged.length) : null;
+  const gen = async (apply = false) => { setRbusy(true); setRerr(''); try { await api('/api/report', { date: today(), apply }); await load(); if (apply) await act(async () => null, { title: 'TARGET UPDATED', lines: ['From your weekly trend'] }); } catch (e) { setRerr(e instanceof ApiError ? e.code : 'error'); } finally { setRbusy(false); } };
+  const upload = (f: File) => run(async () => {
+    const path = `${uid}/${today()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const up = await supabase.storage.from('sf-progress').upload(path, f, { contentType: f.type || 'image/jpeg' }); if (up.error) throw up.error;
+    const ins = await supabase.from('sf_progress_photos').insert({ user_id: uid, date: today(), path }); if (ins.error) throw ins.error; await load(); });
   return <div className="space-y-5 animate-rise">
-    <h1 className="display font-black text-2xl sm:text-3xl text-sky-50 glow-text">PROGRESS</h1>
+    <h1 className="display font-black text-2xl sm:text-3xl text-sky-50 glow-text">{t('progress').toUpperCase()}</h1>
     <div className="grid lg:grid-cols-3 gap-5">
-      <Holo className="lg:col-span-2" title="Weight evolution" right={<span className="display text-xs text-emerald-300">−2.0 kg · 8 weeks</span>}><NeonLine values={weights} labels={weightLabels} unit=" kg" height={180} /></Holo>
-      <Holo violet title="Rank path"><div className="flex items-center justify-between">{(['E', 'D', 'C', 'B', 'A', 'S'] as const).map(r => <div key={r} className={`flex flex-col items-center ${r === hunter.rank ? '' : 'opacity-40'}`}><RankBadge rank={r} s={r === hunter.rank ? 50 : 34} /></div>)}</div>
-        <div className="mt-4"><XPBar value={hunter.into} max={hunter.need} label={`Level ${hunter.level}`} sub={`${hunter.need - hunter.into} XP to level ${hunter.level + 1}`} /></div></Holo>
+      <Holo className="lg:col-span-2" title="Weight evolution" right={w.length > 1 && <span className={`display text-xs ${w[w.length - 1].kg <= w[0].kg ? 'text-emerald-300' : 'text-amber-300'}`}>{(w[w.length - 1].kg - w[0].kg).toFixed(1)} kg</span>}>
+        {w.length > 1 ? <NeonLine values={w.slice(-16).map(x => x.kg)} labels={w.slice(-16).map(x => x.date.slice(5))} unit=" kg" height={180} /> : <p className="text-sm text-slate-400 py-6 text-center">Log your weight 2+ times to see the curve. Weigh in the morning, 1–3× per week.</p>}
+        <div className="flex items-end gap-2 mt-3"><Field label={`${t('logWeight')} (kg)`}><Num value={kg} min={30} max={300} step={0.1} onChange={setKg} className="!w-32" /></Field>
+          <Busy busy={busy} className="neon-btn" disabled={!kg} onClick={() => run(async () => { await act((sb, u, d) => E.logWeight(sb, u, d, Number(kg))); setKg(''); await load(); })}>{t('save')}</Busy></div>
+      </Holo>
+      <Holo violet title="Rank path"><div className="flex items-center justify-between">{(['E', 'D', 'C', 'B', 'A', 'S'] as const).map(r => <div key={r} className={r === h.stats.rank ? '' : 'opacity-35'}><RankBadge rank={r} s={r === h.stats.rank ? 50 : 32} /></div>)}</div>
+        <div className="mt-4"><XPBar value={h.stats.into} max={h.stats.need} label={`${t('level')} ${h.stats.level}`} sub={`${h.stats.need - h.stats.into} XP → ${h.stats.level + 1}`} /></div>
+        <p className="text-[12px] mt-3" style={{ color: RANK_COLORS[h.stats.rank] }}>Ranks: E 1–9 · D 10–19 · C 20–34 · B 35–49 · A 50–69 · S 70+</p></Holo>
     </div>
     <div className="grid lg:grid-cols-3 gap-5">
-      <Holo title="Calories · this week"><div className="flex items-end gap-2 h-40">{kcalWeek.map((v, i) => <div key={i} className="flex-1 flex flex-col items-center gap-1"><div className="w-full rounded-t-md bg-gradient-to-t from-sky-500/70 to-violet-500/80 shadow-glow" style={{ height: `${(v / 2200) * 100}%` }} /><span className="label !text-[9px]">{'MTWTFSS'[i]}</span></div>)}</div><div className="text-sm text-slate-400 mt-2">Average 1,779 kcal · target 1,950</div></Holo>
-      <Holo violet title="Attributes"><div className="flex justify-center"><Radar stats={attributes} size={200} /></div></Holo>
-      <Holo title="Weekly report · AI"><div className="flex items-center gap-4"><NeonRing value={82} max={100} size={96} stroke={8}><span className="display text-xl text-sky-50">82</span></NeonRing><div className="text-sm"><div className="text-emerald-300">▲ Push-ups +4 reps</div><div className="text-emerald-300">▲ 5/7 days logged</div><div className="text-amber-300">▼ Water under target 3 days</div></div></div>
-        <p className="text-[13px] text-slate-400 mt-3">Next week: add 1 cardio session, keep calories at 1,950. Targets never change from one unusual day.</p></Holo>
+      <Holo title="Calories · last 7 days"><div className="relative flex items-end gap-2 h-40">
+        <div className="absolute inset-x-0 border-t border-dashed border-emerald-400/50" style={{ bottom: `${(tk / maxK) * 100}%` }}><span className="absolute -top-4 right-0 text-[10px] text-emerald-300">target {tk}</span></div>
+        {week7.map(x => <div key={x.d} className="flex-1 flex flex-col items-center gap-1 h-full justify-end"><div className="w-full rounded-t-md bg-gradient-to-t from-sky-500/70 to-violet-500/80 shadow-glow" style={{ height: `${(x.kcal / maxK) * 100}%` }} /><span className="label !text-[9px]">{'SMTWTFS'[new Date(x.d + 'T12:00').getDay()]}</span></div>)}</div>
+        <div className="text-sm text-slate-400 mt-2">{avg ? `Average ${avg} kcal on ${logged.length} logged days` : 'No meals logged this week yet.'}</div></Holo>
+      <Holo violet title="Attributes"><div className="flex justify-center"><Radar stats={attrs(h.stats.attrs, h.streak)} size={200} /></div></Holo>
+      <Holo title={t('report')} right={<button className="ghost-btn !min-h-8 !px-2.5 !text-[11px]" disabled={rbusy} onClick={() => gen()}>{rbusy ? '…' : t('generate')}</button>}>
+        {rerr && <p className="text-sm text-rose-300 mb-2">{rerr === 'ai_busy' ? 'AI busy — retry in 30 s.' : `Error: ${rerr}`}</p>}
+        {!reports.length ? <p className="text-sm text-slate-400">Your first evaluation analyses last week: training, calories, protein, weight trend and quests.</p> : (() => { const r = reports[0]; const s = r.stats;
+          return <div className="space-y-2 text-sm"><div className="flex items-center gap-3"><NeonRing value={s.quests_done} max={Math.max(1, s.quests_total)} size={84} stroke={7}><span className="display text-base text-sky-50">{s.quests_total ? Math.round(s.quests_done / s.quests_total * 100) : 0}%</span></NeonRing>
+            <div className="text-[13px] space-y-0.5"><div>⚔️ {s.workouts_done}/{s.workouts_planned} workouts</div><div>🍽️ {s.days_logged} days logged · avg {fmt(s.avg_kcal)} kcal</div><div>⚡ protein target {s.protein_days} days</div><div>✨ +{fmt(s.xp)} XP</div></div></div>
+            {r.text && <p className="text-slate-200 whitespace-pre-wrap" dir="auto">{r.text}</p>}
+            <div className="rounded-lg border border-sky-400/20 p-2 text-[13px]"><b>Target review:</b> {s.review.reason}{s.review.suggestion !== 'keep' && <button className="neon-btn !min-h-8 !text-[12px] mt-2 w-full" disabled={rbusy} onClick={() => gen(true)}>{t('apply')} ({s.review.deltaKcal > 0 ? '+' : ''}{s.review.deltaKcal} kcal)</button>}</div>
+            <div className="text-[11px] text-slate-500">Week of {r.week_start}</div></div>; })()}
+      </Holo>
+    </div>
+    <div className="grid lg:grid-cols-2 gap-5">
+      <Holo title={t('measurements')}>
+        <div className="grid grid-cols-3 gap-2">{(['waist_cm', 'chest_cm', 'hips_cm', 'arm_cm', 'thigh_cm'] as const).map(k => <Field key={k} label={k.replace('_cm', ' (cm)')}><Num value={meas[k] ?? ''} min={10} max={250} step={0.5} onChange={v => setMeas({ ...meas, [k]: v === '' ? null : v })} /></Field>)}</div>
+        <Busy busy={busy} className="neon-btn w-full mt-3" onClick={() => run(async () => { const { waist_cm, chest_cm, hips_cm, arm_cm, thigh_cm } = meas; const r = await supabase.from('sf_measurements').upsert({ user_id: uid, date: today(), waist_cm, chest_cm, hips_cm, arm_cm, thigh_cm }, { onConflict: 'user_id,date' }); if (r.error) throw r.error; })}>{t('save')}</Busy>
+      </Holo>
+      <Holo violet title={t('photos')}>
+        <label className="ghost-btn w-full cursor-pointer"><Icon n="camera" s={16} />Add photo<input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ''; }} /></label>
+        <div className="grid grid-cols-3 gap-2 mt-3">{photos.map(p => <div key={p.id} className="relative"><img src={p.url} alt={p.date} className="rounded-lg aspect-[3/4] object-cover w-full" /><span className="absolute bottom-1 left-1 text-[10px] bg-black/60 rounded px-1">{p.date}</span></div>)}</div>
+        <p className="text-[11px] text-slate-500 mt-2">Stored in a private bucket — only you can open them (links expire after 1 hour).</p>
+      </Holo>
     </div>
   </div>;
 }
 
 // ================= PROFILE =================
 export function Profile() {
-  const h = PREVIEW.hunter;
-  return <div className="space-y-5 animate-rise max-w-3xl">
-    <Holo violet scan className="!p-5"><div className="flex items-center gap-4"><RankBadge rank={h.rank} s={72} /><div><h1 className="display font-black text-2xl text-sky-50 glow-text">{h.name.toUpperCase()}</h1><div className="text-slate-400 text-sm">Level {h.level} · {h.title}</div></div></div></Holo>
-    <Holo title="Hunter data"><div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">{[['Age', '27'], ['Height', '178 cm'], ['Weight', '82.2 kg'], ['Target', '76 kg'], ['Location', 'Home'], ['Equipment', 'Dumbbells, band'], ['Training days', 'Mon · Wed · Fri · Sat'], ['Session', '35 min'], ['Allergies', 'None'], ['Budget', '600 MAD / week'], ['Cuisines', 'Moroccan, Japanese, Turkish'], ['Language', 'Darija']].map(([k, v]) =>
-      <div key={k} className="rounded-lg border border-sky-400/15 bg-void-950/40 p-3"><div className="label">{k}</div><div className="text-slate-100 mt-0.5">{v}</div></div>)}</div></Holo>
-    <Holo title="Daily targets (Mifflin-St Jeor)"><div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-center">{[['Calories', '1,950'], ['Protein', '140 g'], ['Carbs', '210 g'], ['Fat', '65 g'], ['Water', '2.6 L']].map(([k, v]) =>
-      <div key={k} className="rounded-lg border border-violet-400/20 bg-violet-500/[.05] p-3"><div className="display text-lg text-sky-50">{v}</div><div className="label">{k}</div></div>)}</div>
-      <p className="text-[12px] text-slate-500 mt-3">Moderate deficit (−400 kcal). Never below safe minimums. Estimates, not medical advice.</p></Holo>
-    <div className="grid sm:grid-cols-2 gap-3">{['Notifications & motivation', 'Language', 'Privacy & data export', 'Log out'].map(x => <button key={x} className="holo !p-4 flex items-center justify-between text-left hover:shadow-glow"><div className="corners"><i /><i /><i /><i /></div><span className="font-ui font-bold tracking-wider uppercase text-slate-200">{x}</span><Icon n="next" s={18} className="text-sky-300" /></button>)}</div>
-  </div>;
-}
-
-// ================= AWAKENING (onboarding preview) =================
-export function Awaken() {
-  const [step, setStep] = useState(0);
-  const steps = [
-    { t: 'You have been chosen', d: 'A new System has connected to you. It will track your body, your food and your discipline — and make you stronger every day.' },
-    { t: 'Hunter data', d: 'Age · gender · height · weight · target · activity · experience' },
-    { t: 'Training grounds', d: 'Home or gym · equipment · days · session length' },
-    { t: 'Fuel', d: 'Diet preferences · allergies · budget · favourite cuisines' },
-  ];
-  return <div className="min-h-[70vh] grid place-items-center animate-rise">
-    <div className="max-w-lg w-full text-center">
-      <div className="label text-neon-cyan animate-flicker">[ SYSTEM MESSAGE ]</div>
-      <div className="display font-black text-3xl sm:text-4xl mt-3 glow-violet text-violet-100">AWAKENING</div>
-      <Holo violet scan className="mt-6 text-left !p-6"><div className="flex gap-1.5 mb-5">{steps.map((_, i) => <i key={i} className={`h-1 flex-1 rounded-full ${i <= step ? 'bg-gradient-to-r from-sky-400 to-violet-500 shadow-glow' : 'bg-slate-700'}`} />)}</div>
-        <div className="display text-xl text-sky-50">{steps[step].t}</div><p className="text-slate-300 mt-2">{steps[step].d}</p>
-        {step === 1 && <div className="grid grid-cols-2 gap-3 mt-4">{['Age', 'Height (cm)', 'Weight (kg)', 'Target (kg)'].map(x => <input key={x} className="field" placeholder={x} />)}</div>}
-        <div className="flex justify-between mt-6"><button className="ghost-btn" disabled={!step} onClick={() => setStep(s => Math.max(0, s - 1))}>Back</button>
-          {step < steps.length - 1 ? <button className="neon-btn" onClick={() => setStep(s => s + 1)}>Accept</button> : <Link to="/" className="neon-btn">Arise</Link>}</div></Holo>
-      <p className="text-[12px] text-slate-500 mt-4">Rank colours: {Object.entries(RANK_COLORS).map(([r, c]) => <span key={r} style={{ color: c }} className="display mx-1">{r}</span>)}</p>
+  const { h, refresh, uid, session, toast } = useHunter(); const [edit, setEdit] = useState(false); const [p, setP] = useState<ProfileDraft | null>(null); const [busy, run] = useBusy();
+  const [prefs, setPrefs] = useState<any>(null); const [pushMsg, setPushMsg] = useState(''); const [del, setDel] = useState(false); const [pw, setPw] = useState('');
+  useEffect(() => { if (uid) supabase.from('sf_notification_prefs').select('*').eq('user_id', uid).maybeSingle().then(({ data }) => setPrefs(data ?? { enabled: false, morning: true, pre_workout: true, post_workout: true, evening: true, morning_time: '08:00', workout_time: '18:00', evening_time: '21:30' })); }, [uid]);
+  if (!h) return <Spinner />;
+  const pr = h.profile;
+  const startEdit = () => { const { id, onboarded, ...rest } = pr; setP({ ...rest, limitations: rest.limitations ?? '' }); setEdit(true); };
+  const save = () => run(async () => { if (!p || !uid) return;
+    const training = (['experience', 'location', 'equipment', 'training_days', 'session_minutes', 'limitations'] as const).some(k => JSON.stringify(p[k]) !== JSON.stringify((pr as any)[k]));
+    await E.saveProfile(supabase, uid, { ...p, limitations: p.limitations?.trim() || null }, isoDate(), { regeneratePlan: training, reason: 'Profile updated' });
+    setLang(p.language as Lang); setEdit(false); await refresh(); toast({ ok: true, title: 'PROFILE SAVED', lines: training ? ['Training plan rebuilt'] : ['Targets recalculated'] }); });
+  const savePrefs = (next: any) => run(async () => { setPrefs(next); const r = await supabase.from('sf_notification_prefs').upsert({ ...next, user_id: uid, tz_offset_min: -new Date().getTimezoneOffset(), updated_at: new Date().toISOString() }); if (r.error) throw r.error; });
+  return <div className="space-y-5 animate-rise">
+    <h1 className="display font-black text-2xl sm:text-3xl text-sky-50 glow-text">{t('profile').toUpperCase()}</h1>
+    <div className="grid lg:grid-cols-2 gap-5">
+      <Holo violet title="Hunter data" right={<button className="ghost-btn !min-h-8 !px-2.5 !text-[11px]" onClick={startEdit}><Icon n="gear" s={14} />{t('edit')}</button>}>
+        <div className="flex items-center gap-4 mb-4"><RankBadge rank={h.stats.rank} s={64} /><div><div className="display text-xl text-sky-50">{pr.name.toUpperCase()}</div><div className="text-[12px] text-slate-400">{session?.user.email}</div></div></div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">{[['Age', pr.age], ['Height', `${pr.height_cm} cm`], ['Weight', `${pr.weight_kg} kg`], ['Target', pr.target_weight_kg ? `${pr.target_weight_kg} kg` : '–'], ['Goal', pr.goal], ['Activity', pr.activity],
+          ['Experience', pr.experience], ['Training', `${pr.training_days}×/week · ${pr.session_minutes} min · ${pr.location}`], ['Equipment', pr.equipment.join(', ') || 'bodyweight'], ['Diet', pr.diet], ['Allergies', pr.allergies.join(', ') || '–'], ['Budget', pr.budget]].map(([a, b]) =>
+          <div key={String(a)} className="contents"><span className="label">{a}</span><span className="text-slate-200 truncate">{b}</span></div>)}</div>
+      </Holo>
+      <Holo title="Targets">
+        {h.target ? <div className="grid grid-cols-2 gap-2">{[['Calories', `${h.target.kcal ?? '–'} kcal`], [t('protein'), `${h.target.protein ?? '–'} g`], [t('carbs'), `${h.target.carbs ?? '–'} g`], [t('fat'), `${h.target.fat ?? '–'} g`], [t('fiber'), `${h.target.fiber ?? '–'} g`], [t('water'), `${(h.target.water_ml / 1000).toFixed(1)} L`]].map(([a, b]) =>
+          <div key={a} className="rounded-xl border border-sky-400/15 bg-void-950/40 p-2.5"><div className="label">{a}</div><div className="display text-sky-50">{b}</div></div>)}</div> : <p className="text-sm text-slate-400">No target.</p>}
+        <p className="text-[11px] text-slate-500 mt-2">Since {h.target?.effective_from} · {h.target?.reason}. Changes only via the weekly evaluation — never from one day.</p>
+      </Holo>
     </div>
+    <Holo title={t('notifications')}>
+      {!prefs ? <Spinner /> : <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-3"><button className={`chip ${prefs.enabled ? 'on' : ''}`} disabled={busy} onClick={async () => {
+          if (!prefs.enabled) { const r = await enablePush(uid!); setPushMsg(r === 'ok' ? 'Push enabled on this device.' : r === 'not_configured' ? 'Push needs the VAPID key on the server (VITE_VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY in Vercel).' : r === 'denied' ? 'Notifications blocked in the browser settings.' : 'This browser does not support push (on iPhone: add the app to the Home Screen first).'); if (r === 'ok') savePrefs({ ...prefs, enabled: true }); }
+          else { await disablePush(); savePrefs({ ...prefs, enabled: false }); setPushMsg('Push disabled.'); } }}>{prefs.enabled ? '🔔 ON' : '🔕 OFF'}</button>
+          {!pushSupported() && <span className="text-[12px] text-slate-500">Push not supported in this browser.</span>}{!VAPID_PUBLIC && <span className="text-[12px] text-amber-200">Server push key not configured yet.</span>}</div>
+        {pushMsg && <p className="text-[13px] text-sky-200">{pushMsg}</p>}
+        <div className="grid sm:grid-cols-3 gap-3">{([['morning', 'morning_time', 'Morning'], ['pre_workout', 'workout_time', 'Workout time'], ['evening', 'evening_time', 'Evening review']] as const).map(([k, tk, l]) =>
+          <div key={k} className="rounded-xl border border-sky-400/15 p-3"><label className="flex items-center gap-2"><input type="checkbox" checked={!!prefs[k]} onChange={e => savePrefs({ ...prefs, [k]: e.target.checked })} /><span className="font-ui font-bold">{l}</span></label>
+            <input type="time" className="field !min-h-9 mt-2" value={prefs[tk]} onChange={e => savePrefs({ ...prefs, [tk]: e.target.value })} /></div>)}</div>
+        <p className="text-[11px] text-slate-500">Reminders are encouraging, never shaming. The pre-workout reminder comes 1 hour before your workout time, on training days only.</p>
+      </div>}
+    </Holo>
+    <Holo title="Account">
+      <div className="flex flex-wrap gap-2"><button className="ghost-btn" onClick={() => supabase.auth.signOut()}>{t('signOut')}</button>
+        <div className="flex gap-2"><input className="field !min-h-10 !w-48" type="password" minLength={8} placeholder="New password" value={pw} onChange={e => setPw(e.target.value)} />
+          <Busy busy={busy} className="ghost-btn" disabled={pw.length < 8} onClick={() => run(async () => { const r = await supabase.auth.updateUser({ password: pw }); if (r.error) throw r.error; setPw(''); toast({ ok: true, title: 'PASSWORD CHANGED', lines: [] }); })}>Change</Busy></div>
+        <button className="ghost-btn !text-rose-300 !border-rose-400/30" onClick={() => setDel(true)}>Delete my SHADOW FIT data</button></div>
+    </Holo>
+    {edit && p && <Modal title={t('edit')} onClose={() => setEdit(false)} wide><ProfileFields p={p} set={x => setP({ ...p, ...x })} step="all" /><div className="mt-4"><TargetsPreview p={p} /></div>
+      <Busy busy={busy} className="neon-btn w-full mt-4" disabled={!p.name.trim()} onClick={save}>{t('save')}</Busy></Modal>}
+    {del && <Modal title="Delete all data" onClose={() => setDel(false)}><p className="text-sm text-slate-300">This permanently deletes your SHADOW FIT profile, logs, workouts, XP, chat and photos (your login stays, so you can awaken again). It cannot be undone.</p>
+      <Busy busy={busy} className="neon-btn w-full mt-4 !from-rose-500 !to-rose-700" onClick={() => run(async () => {
+        const list = await supabase.storage.from('sf-progress').list(uid!); if (list.data?.length) await supabase.storage.from('sf-progress').remove(list.data.map(f => `${uid}/${f.name}`));
+        for (const tb of ['sf_xp_events', 'sf_exercise_sets', 'sf_workout_sessions', 'sf_food_logs', 'sf_water_logs', 'sf_quests', 'sf_challenges', 'sf_achievements', 'sf_custom_foods', 'sf_favorite_recipes', 'sf_exercise_progress', 'sf_training_plans', 'sf_personal_records', 'sf_checkins', 'sf_weights', 'sf_measurements', 'sf_progress_photos', 'sf_weekly_reports', 'sf_ai_messages', 'sf_ai_memory', 'sf_notification_prefs', 'sf_push_subscriptions', 'sf_targets']) {
+          const r = await supabase.from(tb).delete().eq('user_id', uid); if (r.error) throw r.error; }
+        const r = await supabase.from('sf_profiles').delete().eq('id', uid); if (r.error) throw r.error; setDel(false); await refresh(); })}>Delete permanently</Busy></Modal>}
   </div>;
 }
