@@ -1,5 +1,5 @@
 -- SHADOW FIT — database schema. Paste the whole file into Supabase → SQL Editor → Run (safe to run again).
--- Every table is prefixed sf_ so it lives next to the older MyFit tables without touching them.
+-- Every table is prefixed sf_ (SHADOW FIT).
 -- Every personal table carries user_id and is protected by Row Level Security: a user can only read/write their own rows.
 
 create or replace function public.sf_touch() returns trigger language plpgsql as $$

@@ -1,4 +1,4 @@
-// MyFit nutrition engine — pure, deterministic functions (unit-tested in nutrition.test.ts).
+// SHADOW FIT nutrition engine — pure, deterministic functions (unit-tested in nutrition.test.ts).
 // Formulas:
 //  * BMR: Mifflin-St Jeor (1990). Male: 10W + 6.25H − 5A + 5 ; Female: 10W + 6.25H − 5A − 161.
 //    "Other / prefer not to say" uses the midpoint constant (−78).

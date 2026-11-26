@@ -1,5 +1,5 @@
 # Hourly trigger for SHADOW FIT motivation pushes (Vercel's free plan only allows daily crons).
-# Needs two repository secrets: SHADOW_FIT_URL (e.g. https://myfit-3lar.vercel.app) and CRON_SECRET (same value as in Vercel).
+# Needs two repository secrets: SHADOW_FIT_URL (your site URL) and CRON_SECRET (same value as in Vercel).
 name: notify
 on:
   schedule: [{ cron: '5 * * * *' }]
