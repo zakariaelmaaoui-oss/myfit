@@ -7,14 +7,14 @@ import { Seg } from '../app/ui';
 
 export function AuthGate() {
   const [mode, setMode] = useState<'in' | 'up' | 'reset'>('in'); const [email, setEmail] = useState(''); const [pw, setPw] = useState('');
-  const [busy, setBusy] = useState(false); const [err, setErr] = useState(''); const [msg, setMsg] = useState(''); const [, force] = useState(0);
+  const [busy, setBusy] = useState(false); const [unconfirmed, setUnconfirmed] = useState(false); const [err, setErr] = useState(''); const [msg, setMsg] = useState(''); const [, force] = useState(0);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault(); setErr(''); setMsg(''); setBusy(true);
     try {
-      if (mode === 'in') { const { error } = await supabase.auth.signInWithPassword({ email, password: pw }); if (error) throw error; }
+      if (mode === 'in') { const { error } = await supabase.auth.signInWithPassword({ email, password: pw }); if (error) { if (/not confirmed/i.test(error.message)) setUnconfirmed(true); throw error; } }
       else if (mode === 'up') {
         const { data, error } = await supabase.auth.signUp({ email, password: pw, options: { emailRedirectTo: location.origin } }); if (error) throw error;
-        if (!data.session) setMsg('Check your email to confirm your account, then sign in.');
+        if (!data.session) { setUnconfirmed(true); setMsg('Confirmation email sent. Check your inbox AND the Spam folder, click the link, then sign in here.'); }
       } else { const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: location.origin + '/profile' }); if (error) throw error; setMsg('Password reset email sent.'); }
     } catch (x: any) { setErr(x?.message ?? String(x)); } finally { setBusy(false); }
   };
@@ -30,9 +30,10 @@ export function AuthGate() {
         <form onSubmit={submit} className="space-y-3">
           <input className="field" type="email" required autoComplete="email" placeholder={t('email')} value={email} onChange={e => setEmail(e.target.value)} />
           {mode !== 'reset' && <input className="field" type="password" required minLength={8} autoComplete={mode === 'up' ? 'new-password' : 'current-password'} placeholder={t('password') + (mode === 'up' ? ' (8+)' : '')} value={pw} onChange={e => setPw(e.target.value)} />}
-          {err && <p className="text-sm text-rose-300">{err}</p>}{msg && <p className="text-sm text-emerald-300">{msg}</p>}
+          {err && <p className="text-sm text-rose-300">{/not confirmed/i.test(err) ? 'Email not confirmed yet — click the link in the email we sent (check Spam).' : /rate limit/i.test(err) ? 'Too many emails sent — wait an hour, or ask the admin to disable email confirmation.' : err}</p>}{msg && <p className="text-sm text-emerald-300">{msg}</p>}
           <button className="neon-btn w-full" disabled={busy}>{busy ? '…' : mode === 'in' ? t('signIn') : mode === 'up' ? t('signUp') : 'Send'}</button>
         </form>
+        {unconfirmed && email && <button className="ghost-btn w-full mt-3" disabled={busy} onClick={async () => { setErr(''); const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: location.origin } }); if (error) setErr(error.message); else setMsg('Email sent again — check Spam too.'); }}>Resend confirmation email</button>}
         <div className="mt-4 flex flex-wrap justify-between gap-2 text-sm">
           {mode !== 'in' && <button className="text-sky-300 hover:underline" onClick={() => setMode('in')}>{t('signIn')}</button>}
           {mode !== 'up' && <button className="text-violet-300 hover:underline" onClick={() => setMode('up')}>{t('signUp')}</button>}
