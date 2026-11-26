@@ -4,6 +4,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import Groq from 'groq-sdk';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_KEY } from '../../src/lib/publicConfig.js';
 
 export type Req = IncomingMessage & { body?: unknown; query?: Record<string, string> };
 export function send(res: ServerResponse, status: number, body: unknown) {
@@ -14,8 +15,8 @@ export async function readBody(req: Req): Promise<any> {
   const chunks: Buffer[] = []; for await (const c of req) chunks.push(c as Buffer);
   return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
 }
-export const supabaseUrl = () => (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '').replace(/\/(rest|auth|storage)\/v1$/, '');
-const anonKey = () => process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
+export const supabaseUrl = () => (process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || PUBLIC_SUPABASE_URL).trim().replace(/\/+$/, '').replace(/\/(rest|auth|storage)\/v1$/, '');
+const anonKey = () => process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || PUBLIC_SUPABASE_KEY;
 
 /** Supabase client acting AS the signed-in user (RLS applies), from the bearer token the browser sends. */
 export async function userClient(req: Req): Promise<{ sb: SupabaseClient; uid: string } | { error: string; status: number }> {
